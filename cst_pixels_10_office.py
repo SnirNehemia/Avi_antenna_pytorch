@@ -16,14 +16,15 @@ from distutils.dir_util import copy_tree
 import shutil
 import pickle
 import time
+from matplotlib import pyplot as plt
+from datetime import datetime
+
 import A_create_pixelated_antenna as parametric_ant_utils
 # parametric_ant_utils should have two main functions:
 #   parametric_ant_utils.randomize_ant(model_parameters,seed) - > create the STL for CST
 #   parametric_ant_utils.save_figure() - > save a figure to show the model at a glance
-
-from matplotlib import pyplot as plt
-from datetime import datetime
-
+from parse_farfield import convert_farfield
+from stl_generation import randomize_ant
 # def myround(x, base=5):
 #     return base * round(x/base)
 
@@ -31,7 +32,7 @@ from datetime import datetime
 # --- define local path and project name
 
 simulation_name = 'CST_pixels_10'
-project_name = r'Pixel'
+project_name = r'Pixels_CST'
 local_path = r'G:\Pixels'
 
 # -------- rogers RO4003 --------
@@ -48,6 +49,10 @@ model_parameters = {
     'type':10,
     'plane':'xy',
     'h':10,
+    'patch_x': 64,
+    'patch_y': 64,
+    'ground_x': 100,
+    'ground_y': 100,
     'eps_r': 1,
     'tan_d': 0
 }
@@ -65,15 +70,18 @@ model_parameters_limits = model_parameters.copy()
 final_dir = local_path + project_name
 project_path = final_dir + "\\" + simulation_name + ".cst"
 results_path = final_dir+"\\output\\results"
+surface_currents_source_path = final_dir+"\\" + simulation_name +r'\Export\3d'
 models_path =  final_dir+"\\output\\models"
 pattern_source_path = (final_dir+"\\" + simulation_name +
                   r'\Export\Farfield')
 save_S11_pic_dir = final_dir+"\\output\\S11_pictures"
 STEP_source_path = (final_dir+"\\" + simulation_name +
                   r'\Model\3D')
+path_to_save_mesh = os.path.join(local_path, project_path, 'STLs')
+
+
 # --- for export STLs
-file_names = ['Antenna_PEC', 'Antenna_Feed', 'Antenna_Feed_PEC',
-              'Env_FR4', 'Env_Vacuum']
+file_names = ['Antenna_PEC', 'Antenna_Feed', 'Env_Vacuum', 'Env_PEC']
 
 # file_names = ['Antenna_PEC', 'Antenna_Feed', 'Antenna_Feed_PEC',
 #               'Env_FR4', 'Env_Vacuum']
@@ -145,14 +153,9 @@ for run_ID_local in range(0, 10000):  #15001-starting_index-1 % 15067 is problem
                             End Sub'''
                     project.schematic.execute_vba_code(VBA_code)
         if create_new_models: # for new models
-            ant_parameters = parametric_ant_utils.randomize_ant(model_parameters,seed=run_ID)
-            for key, value in ant_parameters.items():
-                VBA_code = r'''Sub Main
-                        StoreParameter("'''+key+'''", '''+str(value)+''')
-                        End Sub'''
-                project.schematic.execute_vba_code(VBA_code)
+            ant_parameters = randomize_ant(path_to_save_mesh, model_parameters,seed=run_ID)
             # save picture of the antenna
-            parametric_ant_utils.save_figure(model_parameters, ant_parameters, local_path + project_name, run_ID)
+            # parametric_ant_utils.save_figure(model_parameters, ant_parameters, local_path + project_name, run_ID)
         print('created antenna... ',end='')
         """ Rebuild the model and run it """
         project.model3d.full_history_rebuild()  # I just replaced modeler with model3d
@@ -210,7 +213,9 @@ for run_ID_local in range(0, 10000):  #15001-starting_index-1 % 15067 is problem
     print(' got results... ',end='')
 
     # save the farfield
-    copy_tree(pattern_source_path, results_path + '\\' + str(run_ID))
+    copy_tree(surface_currents_source_path, results_path + '\\' + str(run_ID))
+
+    convert_farfield(results_path + '\\' + str(run_ID), pattern_source_path)
 
     # save and copy the STEP model:
     # save:
