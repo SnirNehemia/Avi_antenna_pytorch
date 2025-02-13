@@ -41,11 +41,11 @@ final_dir = r'C:\Users\Public\Pixel_model_10'
 model_parameters = {
     'type':10,
     'plane':'xy',
-    'h':5,
-    'patch_x': 32,
-    'patch_y': 32,
-    'ground_x': 50,
-    'ground_y': 50,
+    'h':7,
+    'patch_x': 50,
+    'patch_y': 50,
+    'ground_x': 80,
+    'ground_y': 80,
     'eps_r': 3.55,
     'tan_d': 0.0027
 }
@@ -81,8 +81,6 @@ models_path =  final_dir+"\\output\\models"
 pattern_source_path = (final_dir+"\\" + simulation_name +
                   r'\Export\Farfield')
 save_S11_pic_dir = final_dir+"\\output\\S11_pictures"
-STEP_source_path = (final_dir+"\\" + simulation_name +
-                  r'\Model\3D')
 path_to_save_mesh = os.path.join(final_dir, 'STLs')
 
 
@@ -105,7 +103,7 @@ results = cst.results.ProjectFile(project_path, allow_interactive=True)
 # run the function that is currently called 'main' to generate the cst file
 overall_sim_time = time.time()
 ants_count = 0
-starting_index = 20000
+starting_index = 21000
 for run_ID_local in range(0, 10000):  #15001-starting_index-1 % 15067 is problematic!
     run_ID = starting_index + run_ID_local
     if os.path.isfile(save_S11_pic_dir + r'\S_parameters_' + str(
@@ -223,60 +221,60 @@ for run_ID_local in range(0, 10000):  #15001-starting_index-1 % 15067 is problem
 
     convert_farfield(results_path + '\\' + str(run_ID), pattern_source_path)
 
-    # save and copy the STEP model:
-    # save:
-    for file_name in file_names:
-        VBA_code = r'''Sub Main
-        SelectTreeItem("Components'''+'\\'+file_name+r'''")
-            Dim path As String
-            Path = "./'''+file_name+'''_STEP.stp"
-            With STEP
-                .Reset
-                .FileName(path)
-                .WriteSelectedSolids
-            End With
-        End Sub'''
-        project.schematic.execute_vba_code(VBA_code)
-        VBA_code = r'''Sub Main
-                SelectTreeItem("Components''' + '\\' + file_name + r'''")
-                    Dim path As String
-                    Path = "./''' + file_name + '''_STL.stl"
-                    With STEP
-                        .Reset
-                        .FileName(path)
-                        .WriteSelectedSolids
-                    End With
-                End Sub'''
-        project.schematic.execute_vba_code(VBA_code)
-    VBA_code = r'''Sub Main
-        Dim path As String
-        Path = "./Whole_Model_STEP.stp"
-        With STEP
-            .Reset
-            .FileName(path)
-            .WriteAll
-        End With
-    End Sub'''
-    project.schematic.execute_vba_code(VBA_code)
-    VBA_code = r'''Sub Main
-            Dim path As String
-            Path = "./Whole_Model_STL.stl"
-            With STEP
-                .Reset
-                .FileName(path)
-                .WriteAll
-            End With
-        End Sub'''
-    project.schematic.execute_vba_code(VBA_code)
+    # # save and copy the STEP model:
+    # # save:
+    # for file_name in file_names:
+    #     VBA_code = r'''Sub Main
+    #     SelectTreeItem("Components'''+'\\'+file_name+r'''")
+    #         Dim path As String
+    #         Path = "./'''+file_name+'''_STEP.stp"
+    #         With STEP
+    #             .Reset
+    #             .FileName(path)
+    #             .WriteSelectedSolids
+    #         End With
+    #     End Sub'''
+    #     project.schematic.execute_vba_code(VBA_code)
+    #     VBA_code = r'''Sub Main
+    #             SelectTreeItem("Components''' + '\\' + file_name + r'''")
+    #                 Dim path As String
+    #                 Path = "./''' + file_name + '''_STL.stl"
+    #                 With STEP
+    #                     .Reset
+    #                     .FileName(path)
+    #                     .WriteSelectedSolids
+    #                 End With
+    #             End Sub'''
+    #     project.schematic.execute_vba_code(VBA_code)
+    # VBA_code = r'''Sub Main
+    #     Dim path As String
+    #     Path = "./Whole_Model_STEP.stp"
+    #     With STEP
+    #         .Reset
+    #         .FileName(path)
+    #         .WriteAll
+    #     End With
+    # End Sub'''
+    # project.schematic.execute_vba_code(VBA_code)
+    # VBA_code = r'''Sub Main
+    #         Dim path As String
+    #         Path = "./Whole_Model_STL.stl"
+    #         With STEP
+    #             .Reset
+    #             .FileName(path)
+    #             .WriteAll
+    #         End With
+    #     End Sub'''
+    # project.schematic.execute_vba_code(VBA_code)
     # now copy:
     target_STEP_folder = models_path + '\\' + str(run_ID)
-    for filename in os.listdir(STEP_source_path):
+    for filename in os.listdir(path_to_save_mesh):
         if filename.endswith('.stp'):
-            shutil.copy(STEP_source_path + '\\' + filename, target_STEP_folder)
+            shutil.copy(path_to_save_mesh + '\\' + filename, target_STEP_folder)
         if filename.endswith('.stl'):
-            shutil.copy(STEP_source_path + '\\' + filename, target_STEP_folder)
+            shutil.copy(path_to_save_mesh + '\\' + filename, target_STEP_folder)
         if filename.endswith('.hlg'):
-            shutil.copy(STEP_source_path + '\\' + filename, target_STEP_folder)
+            shutil.copy(path_to_save_mesh + '\\' + filename, target_STEP_folder)
     # save parameters of model and environment
     file_name = models_path + '\\' + str(run_ID) + '\\model_parameters.pickle'
     file = open(file_name, 'wb')
