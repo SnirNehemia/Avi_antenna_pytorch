@@ -6,13 +6,13 @@ import pandas as pd
 def convert_farfield(dest_path: str, result_path: str, frequency_list = [2400,2800,5200,5600,6000]):
     for freq in frequency_list:
         farfeild = get_farfeild(str(result_path), freq)
-        np.save(os.path.join(dest_path,'farfield_' + freq + '.npy'), farfeild)
+        np.save(os.path.join(dest_path,'farfield_' + str(freq) + '.npy'), farfeild)
 
 
 def get_farfeild(result_path: str, frequency=2400):
     farfeild_path = result_path + '/farfield (f=' + str(frequency) + ') [1].txt'
     farfield = np.array(farfeild_txt_to_np(farfeild_path))
-    return fairfield
+    return farfield
 
 
 def farfeild_txt_to_np(txt_file_path: str):
