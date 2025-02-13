@@ -1,8 +1,9 @@
 import torch
 import numpy as np
 import os
+import pandas as pd
 
-def convert_farfield(dest_path: str, result_path: str, frequency_list = list(range(2000,6000,400))):
+def convert_farfield(dest_path: str, result_path: str, frequency_list = [2400,2800,5200,5600,6000]):
     for freq in frequency_list:
         farfeild = get_farfeild(str(result_path), freq)
         np.save(os.path.join(dest_path,'farfield_' + freq + '.npy'), farfeild)

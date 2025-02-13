@@ -1,5 +1,6 @@
 import os
 import sys
+import torch
 # sys.path.append(r"C:\Program Files\Dassault Systemes\B426CSTEmagConnector\CSTStudio\AMD64\python_cst_libraries")
 sys.path.append(r"C:\Program Files (x86)\CST Studio Suite 2024\AMD64\python_cst_libraries")
 
@@ -19,12 +20,12 @@ import time
 from matplotlib import pyplot as plt
 from datetime import datetime
 
-import A_create_pixelated_antenna as parametric_ant_utils
+# import A_create_pixel_ant_whole_model as parametric_ant_utils
 # parametric_ant_utils should have two main functions:
 #   parametric_ant_utils.randomize_ant(model_parameters,seed) - > create the STL for CST
 #   parametric_ant_utils.save_figure() - > save a figure to show the model at a glance
 from parse_farfield import convert_farfield
-from stl_generation import randomize_ant
+from A_create_pixel_ant_whole_model import randomize_ant
 # def myround(x, base=5):
 #     return base * round(x/base)
 
@@ -32,19 +33,11 @@ from stl_generation import randomize_ant
 # --- define local path and project name
 
 simulation_name = 'CST_pixels_10'
-project_name = r'Pixels_CST'
-local_path = r'G:\Pixels'
+# project_name = r'Pixels_CST'
+# local_path = r'G:\Pixels'
+final_dir = os.path.join(r'G:\Pixels', r'Pixels_CST')
 
 # -------- rogers RO4003 --------
-# model_parameters = {
-#     'type':10,
-#     'plane':'xy',
-#     'h':10,
-#     'eps_r': 3.55,
-#     'tan_d': 0.0027
-# }
-
-# -------- vacuum --------
 model_parameters = {
     'type':10,
     'plane':'xy',
@@ -53,9 +46,22 @@ model_parameters = {
     'patch_y': 64,
     'ground_x': 100,
     'ground_y': 100,
-    'eps_r': 1,
-    'tan_d': 0
+    'eps_r': 3.55,
+    'tan_d': 0.0027
 }
+
+# -------- vacuum --------
+# model_parameters = {
+#     'type':10,
+#     'plane':'xy',
+#     'h':10,
+#     'patch_x': 64,
+#     'patch_y': 64,
+#     'ground_x': 100,
+#     'ground_y': 100,
+#     'eps_r': 1,
+#     'tan_d': 0
+# }
 change_env = 0
 create_new_models = 1
 
@@ -67,7 +73,7 @@ model_parameters_limits = model_parameters.copy()
 
 """ create all tree folder paths """
 # --- from here on I define the paths based on the manually defined project and local path ---
-final_dir = local_path + project_name
+
 project_path = final_dir + "\\" + simulation_name + ".cst"
 results_path = final_dir+"\\output\\results"
 surface_currents_source_path = final_dir+"\\" + simulation_name +r'\Export\3d'
@@ -77,7 +83,7 @@ pattern_source_path = (final_dir+"\\" + simulation_name +
 save_S11_pic_dir = final_dir+"\\output\\S11_pictures"
 STEP_source_path = (final_dir+"\\" + simulation_name +
                   r'\Model\3D')
-path_to_save_mesh = os.path.join(local_path, project_path, 'STLs')
+path_to_save_mesh = os.path.join(final_dir, 'STLs')
 
 
 # --- for export STLs
@@ -181,14 +187,14 @@ for run_ID_local in range(0, 10000):  #15001-starting_index-1 % 15067 is problem
             results = cst.results.ProjectFile(project_path, allow_interactive=True)
 
             if repeat_count > 2:
-                ant_parameters = parametric_ant_utils.randomize_ant(ant_parameters_names,model_parameters)
+                ant_parameters = randomize_ant(path_to_save_mesh, model_parameters,seed=run_ID)
                 for key, value in ant_parameters.items():
                     VBA_code = r'''Sub Main
                                         StoreParameter("''' + key + '''", ''' + str(value) + ''')
                                         End Sub'''
                     project.schematic.execute_vba_code(VBA_code)
                 # save picture of the antenna
-                parametric_ant_utils.save_figure(model_parameters, ant_parameters, local_path + project_name, run_ID)
+                # parametric_ant_utils.save_figure(model_parameters, ant_parameters, local_path + project_name, run_ID)
                 project.model3d.full_history_rebuild()  # I just replaced modeler with model3d
                 time.sleep(30)  # wait for 20 minutes, for the case of temporary license error
             if repeat_count == 6:

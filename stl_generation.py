@@ -215,49 +215,6 @@ def is_connected(data):
     G = to_networkx(data, to_undirected=True)
     return nx.is_connected(G)
 
-def randomize_ant(path_to_save_mesh, model_parameters, grid_size = 16, threshold = 0.5, seed=0):
-    if seed > 0:
-        torch.manual_seed(seed)
-
-    # antenna_parameters['grid_size']
-    size_of_patch_in_mm = model_parameters['patch_x']
-    scale = size_of_patch_in_mm / grid_size
-
-    # Create an external learnable matrix (logits) of shape (16,16)
-    matrix = torch.randn((grid_size, grid_size), requires_grad=True)
-    pixel_data, pixel_probs = create_pixel_mesh(matrix, threshold)
-    # Create a trimesh object
-    pixel_mesh = trimesh.Trimesh(vertices=pixel_data.pos, faces=pixel_data.faces)
-
-    # create feed PEC:
-    max_val = torch.max(matrix)
-    x, y = torch.nonzero(matrix == max_val)[0]
-    length = 10
-    feed_PEC_data = create_feed_PEC(x, y, length)
-    feed_PEC_mesh = trimesh.Trimesh(vertices=feed_PEC_data.pos, faces=feed_PEC_data.faces)
-    # feed_PEC_mesh.show()
-
-    # total_mesh = feed_PEC_mesh + loaded_trimesh
-
-    total_mesh_data = combine_and_merge(feed_PEC_data, pixel_data)
-    total_mesh = trimesh.Trimesh(vertices=total_mesh_data.pos, faces=total_mesh_data.faces)
-    # total_mesh.show()
-    total_mesh.export(path_to_save_mesh + 'PEC.stl')
-    # plot_3d_points_edges(total_mesh.vertices, total_mesh.edges.tolist())
-
-    # create feed
-    feed_data = create_feed(x, y, length)
-    # scale to mm:
-    feed_data.pos = feed_data.pos * scale
-    feed_mesh = trimesh.Trimesh(vertices=feed_data.pos, faces=feed_data.faces)
-    feed_pixel_ant_and_feed_pec = total_mesh + feed_mesh
-    # feed_pixel_ant_and_feed_pec.show()
-    feed_mesh.export(path_to_save_mesh + 'feed.stl')
-
-    # create ground:
-
-    print('created STLs')
-
 if __name__ == "__main__":
     grid_size = 16
     threshold = 0.5
@@ -304,3 +261,46 @@ if __name__ == "__main__":
     # create ground:
 
     print('done')
+
+def randomize_ant(path_to_save_mesh, model_parameters, grid_size = 16, threshold = 0.5, seed=0):
+    if seed > 0:
+        torch.manual_seed(seed)
+
+    # antenna_parameters['grid_size']
+    size_of_patch_in_mm = model_parameters['patch_x']
+    scale = size_of_patch_in_mm / grid_size
+
+    # Create an external learnable matrix (logits) of shape (16,16)
+    matrix = torch.randn((grid_size, grid_size), requires_grad=True)
+    pixel_data, pixel_probs = create_pixel_mesh(matrix, threshold)
+    # Create a trimesh object
+    pixel_mesh = trimesh.Trimesh(vertices=pixel_data.pos, faces=pixel_data.faces)
+
+    # create feed PEC:
+    max_val = torch.max(matrix)
+    x, y = torch.nonzero(matrix == max_val)[0]
+    length = 10
+    feed_PEC_data = create_feed_PEC(x, y, length)
+    feed_PEC_mesh = trimesh.Trimesh(vertices=feed_PEC_data.pos, faces=feed_PEC_data.faces)
+    # feed_PEC_mesh.show()
+
+    # total_mesh = feed_PEC_mesh + loaded_trimesh
+
+    total_mesh_data = combine_and_merge(feed_PEC_data, pixel_data)
+    total_mesh = trimesh.Trimesh(vertices=total_mesh_data.pos, faces=total_mesh_data.faces)
+    # total_mesh.show()
+    total_mesh.export(path_to_save_mesh + 'PEC.stl')
+    # plot_3d_points_edges(total_mesh.vertices, total_mesh.edges.tolist())
+
+    # create feed
+    feed_data = create_feed(x, y, length)
+    # scale to mm:
+    feed_data.pos = feed_data.pos * scale
+    feed_mesh = trimesh.Trimesh(vertices=feed_data.pos, faces=feed_data.faces)
+    feed_pixel_ant_and_feed_pec = total_mesh + feed_mesh
+    # feed_pixel_ant_and_feed_pec.show()
+    feed_mesh.export(path_to_save_mesh + 'feed.stl')
+
+    # create ground:
+
+    print('created STLs')
