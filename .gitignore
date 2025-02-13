@@ -1,0 +1,88 @@
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.env/
+
+# Distribution / packaging
+.Python
+dist/
+build/
+*.egg-info/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Logs and database files
+*.log
+*.sqlite3
+
+# Unit test and coverage reports
+htmlcov/
+*.cover
+.coverage
+*.py,cover
+
+# VS Code settings
+.vscode/
+
+# PyCharm settings
+.idea/
+
+# macOS system files
+.DS_Store
+
+# Windows system files
+Thumbs.db
+
+# Other IDE and editor files
+*.swp
+*.swo
+*.sublime-workspace
+
+# Python-specific files
+*.pyo
+*.pyd
+*.whl
+
+# MyPy cache
+.mypy_cache/
+
+# Pipenv virtual environment
+pipenv.lock
+
+# Poetry virtual environment
+poetry.lock
+
+# Environment variable files
+.env
+.env.*
+
+# Docker
+Dockerfile
+docker-compose.yml
+
+# Ignore files related to deployments
+*.pem
+*.crt
+*.key
+
+# Ignore data files
+*.csv
+*.tsv
+*.jsonl
+
+# Ignore Jupyter Notebook outputs
+*.ipynb_checkpoints
+
+# Ignore pytest cache
+.pytest_cache/
+
+# Ignore coverage reports
+.coverage
+.coverage.*
+.cache

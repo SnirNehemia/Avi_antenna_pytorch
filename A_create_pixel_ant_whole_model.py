@@ -563,6 +563,7 @@ def randomize_ant(path_to_save_mesh, model_parameters, grid_size = 16, threshold
     # # create ground:
     #
     print('created STLs')
+    return matrix
 
 
 if __name__ == "__main__":
