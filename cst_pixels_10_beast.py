@@ -42,11 +42,11 @@ final_dir = r'C:\Users\User\Documents\Pixel_model_10'
 model_parameters = {
     'type':10,
     'plane':'xy',
-    'h':7,
-    'patch_x': 50,
-    'patch_y': 50,
-    'ground_x': 90,
-    'ground_y': 90,
+    'h':4,
+    'patch_x': 35,
+    'patch_y': 35,
+    'ground_x': 60,
+    'ground_y': 60,
     'eps_r': 3.55,
     'tan_d': 0.0027
 }
@@ -218,27 +218,32 @@ for run_ID_local in range(0, 10000):  #15001-starting_index-1 % 15067 is problem
     print(' got results... ',end='')
     folder_path = Path(results_path + '\\' + str(run_ID))
     folder_path.mkdir(parents=True, exist_ok=True)
-    # save the farfield
+
+    # save the farfield and surface currents
     copy_tree(surface_currents_source_path, results_path + '\\' + str(run_ID))
-    # for filename in os.listdir(surface_currents_source_path):
-    #
-    #     df = pd.read_csv(os.path.join(surface_currents_source_path,filename), delimiter=';')  # Load the data into a pandas DataFrame
-    #
-    #     surface_data = {
-    #         '#x [mm]': np.array(df['#x [mm]'].values, dtype=np.float32),  # X coordinates in mm
-    #         'y [mm]': np.array(df['y [mm]'].values, dtype=np.float32),  # Y coordinates in mm
-    #         'z [mm]': np.array(df['z [mm]'].values, dtype=np.float32),  # Z coordinates in mm
-    #         'KxRe [A/m]': np.array(df['KxRe [A/m]'].values, dtype=np.float32),  # Real part of Kx
-    #         'KxIm [A/m]': np.array(df['KxIm [A/m]'].values, dtype=np.float32),  # Imaginary part of Kx
-    #         'KyRe [A/m]': np.array(df['KyRe [A/m]'].values, dtype=np.float32),  # Real part of Ky
-    #         'KyIm [A/m]': np.array(df['KyIm [A/m]'].values, dtype=np.float32),  # Imaginary part of Ky
-    #         'KzRe [A/m]': np.array(df['KzRe [A/m]'].values, dtype=np.float32),  # Real part of Kz
-    #         'KzIm [A/m]': np.array(df['KzIm [A/m]'].values, dtype=np.float32),  # Imaginary part of Kz
-    #         'Area [mm^2]': np.array(df['Area [mm^2]'].values, dtype=np.float32)  # Area element in mm^2
-    #     }
-    #     path_to_save_dict = os.path.join(surface_currents_source_path ,filename + '.pkl')
-    #     with open(path_to_save_dict, "wb") as f:
-    #         pickle.dump(results_path + '\\' + str(run_ID), f, protocol=pickle.HIGHEST_PROTOCOL)
+    for filename in os.listdir(surface_currents_source_path):
+        df = pd.read_csv(os.path.join(surface_currents_source_path, filename),
+                         delimiter=';')  # Load the data into a pandas DataFrame
+
+        surface_data = {
+            '#x [mm]': np.array(df['#x [mm]'].values, dtype=np.float32),  # X coordinates in mm
+            'y [mm]': np.array(df['y [mm]'].values, dtype=np.float32),  # Y coordinates in mm
+            'z [mm]': np.array(df['z [mm]'].values, dtype=np.float32),  # Z coordinates in mm
+            'KxRe [A/m]': np.array(df['KxRe [A/m]'].values, dtype=np.float32),  # Real part of Kx
+            'KxIm [A/m]': np.array(df['KxIm [A/m]'].values, dtype=np.float32),  # Imaginary part of Kx
+            'KyRe [A/m]': np.array(df['KyRe [A/m]'].values, dtype=np.float32),  # Real part of Ky
+            'KyIm [A/m]': np.array(df['KyIm [A/m]'].values, dtype=np.float32),  # Imaginary part of Ky
+            'KzRe [A/m]': np.array(df['KzRe [A/m]'].values, dtype=np.float32),  # Real part of Kz
+            'KzIm [A/m]': np.array(df['KzIm [A/m]'].values, dtype=np.float32),  # Imaginary part of Kz
+            'Area [mm^2]': np.array(df['Area [mm^2]'].values, dtype=np.float32)  # Area element in mm^2
+        }
+        suface_current_pkl_file_name = filename.split('.')[0] + '.pkl'
+        path_to_save_dict = os.path.join(results_path + '\\' + str(run_ID), suface_current_pkl_file_name)
+        with open(path_to_save_dict, "wb") as f:
+            pickle.dump(surface_data, f, protocol=pickle.HIGHEST_PROTOCOL)
+        # remove the .csv surface current:
+        surface_current_csv_path = results_path + '\\' + str(run_ID) + '\\' + filename
+        os.remove(surface_current_csv_path)
 
     convert_farfield(results_path + '\\' + str(run_ID), pattern_source_path)
 
