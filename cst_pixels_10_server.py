@@ -3,7 +3,8 @@ import sys
 import torch
 # sys.path.append(r"C:\Program Files\Dassault Systemes\B426CSTEmagConnector\CSTStudio\AMD64\python_cst_libraries")
 sys.path.append(r"C:\Program Files (x86)\CST Studio Suite 2024\AMD64\python_cst_libraries")
-
+from pathlib import Path
+import pandas as pd
 import cst
 print('can now communicate with ' + cst.__file__) # should print '<PATH_TO_CST_AMD64>\python_cst_libraries\cst\__init__.py'
 # documentation is at "https://space.mit.edu/RADIO/CST_online/Python/main.html"
@@ -42,10 +43,10 @@ model_parameters = {
     'type':10,
     'plane':'xy',
     'h':7,
-    'patch_x': 50,
-    'patch_y': 50,
-    'ground_x': 80,
-    'ground_y': 80,
+    'patch_x': 35,
+    'patch_y': 35,
+    'ground_x': 75,
+    'ground_y': 75,
     'eps_r': 3.55,
     'tan_d': 0.0027
 }
@@ -103,8 +104,8 @@ results = cst.results.ProjectFile(project_path, allow_interactive=True)
 # run the function that is currently called 'main' to generate the cst file
 overall_sim_time = time.time()
 ants_count = 0
-starting_index = 21000
-for run_ID_local in range(0, 10000):  #15001-starting_index-1 % 15067 is problematic!
+starting_index = 25000
+for run_ID_local in range(0, 5000):  #15001-starting_index-1 % 15067 is problematic!
     run_ID = starting_index + run_ID_local
     if os.path.isfile(save_S11_pic_dir + r'\S_parameters_' + str(
             run_ID) + '.png'):  # os.path.isdir(models_path + '\\' + str(run_ID)):
@@ -216,8 +217,31 @@ for run_ID_local in range(0, 10000):  #15001-starting_index-1 % 15067 is problem
     # the farfield will be exported using post-proccessing methods and it should be moved to a designated location and renamed
     print(' got results... ',end='')
 
-    # save the farfield
+    # save the farfield and currents
     copy_tree(surface_currents_source_path, results_path + '\\' + str(run_ID))
+    for filename in os.listdir(surface_currents_source_path):
+        df = pd.read_csv(os.path.join(surface_currents_source_path, filename),
+                         delimiter=';')  # Load the data into a pandas DataFrame
+
+        surface_data = {
+            '#x [mm]': np.array(df['#x [mm]'].values, dtype=np.float32),  # X coordinates in mm
+            'y [mm]': np.array(df['y [mm]'].values, dtype=np.float32),  # Y coordinates in mm
+            'z [mm]': np.array(df['z [mm]'].values, dtype=np.float32),  # Z coordinates in mm
+            'KxRe [A/m]': np.array(df['KxRe [A/m]'].values, dtype=np.float32),  # Real part of Kx
+            'KxIm [A/m]': np.array(df['KxIm [A/m]'].values, dtype=np.float32),  # Imaginary part of Kx
+            'KyRe [A/m]': np.array(df['KyRe [A/m]'].values, dtype=np.float32),  # Real part of Ky
+            'KyIm [A/m]': np.array(df['KyIm [A/m]'].values, dtype=np.float32),  # Imaginary part of Ky
+            'KzRe [A/m]': np.array(df['KzRe [A/m]'].values, dtype=np.float32),  # Real part of Kz
+            'KzIm [A/m]': np.array(df['KzIm [A/m]'].values, dtype=np.float32),  # Imaginary part of Kz
+            'Area [mm^2]': np.array(df['Area [mm^2]'].values, dtype=np.float32)  # Area element in mm^2
+        }
+        suface_current_pkl_file_name = filename.split('.')[0] + '.pkl'
+        path_to_save_dict = os.path.join(results_path + '\\' + str(run_ID), suface_current_pkl_file_name)
+        with open(path_to_save_dict, "wb") as f:
+            pickle.dump(surface_data, f, protocol=pickle.HIGHEST_PROTOCOL)
+        # remove the .csv surface current:
+        surface_current_csv_path = results_path + '\\' + str(run_ID) + '\\' + filename
+        os.remove(surface_current_csv_path)
 
     convert_farfield(results_path + '\\' + str(run_ID), pattern_source_path)
 
