@@ -27,16 +27,16 @@ from datetime import datetime
 #   parametric_ant_utils.save_figure() - > save a figure to show the model at a glance
 from parse_farfield import convert_farfield
 from A_create_pixel_ant_whole_model import randomize_ant
-# def myround(x, base=5):
-#     return base * round(x/base)
+def myround(x, base=5):
+    return base * round(x/base)
 
 """ define run parameters """
 # --- define local path and project name
 
-simulation_name = 'CST_pixels_10'
+simulation_name = 'CST_pixels_10_1'
 # project_name = r'Pixels_CST'
 # local_path = r'G:\Pixels'
-final_dir = r'C:\Users\User\Documents\Pixel_model_10'
+final_dir = r'C:\Users\User\Documents\Pixel_model_10_1'
 
 # -------- rogers RO4003 --------
 model_parameters = {
@@ -48,7 +48,22 @@ model_parameters = {
     'ground_x': 60,
     'ground_y': 60,
     'eps_r': 3.55,
-    'tan_d': 0.0027
+    'tan_d': 0.0027,
+    'c1x': 1,
+    's1x': 1,
+    'c1y': 1,
+    's1y': 1,
+    'c1z': 1,
+    'c2x': 1,
+    's2x': 1,
+    'c2y': 1,
+    's2y': 1,
+    'c2z': 1,
+    'c3x': 1,
+    's3x': 1,
+    'c3y': 1,
+    's3y': 1,
+    'c3z': 1
 }
 
 # -------- vacuum --------
@@ -63,12 +78,17 @@ model_parameters = {
 #     'eps_r': 1,
 #     'tan_d': 0
 # }
-change_env = 0
+change_env = 1
 create_new_models = 1
 
 ## --- define the model parameters limits for randomization:
 model_parameters_limits = model_parameters.copy()
-
+for i in range(3):
+    model_parameters_limits[f'c{i+1}x'] = [-30, 30]
+    model_parameters_limits[f'c{i+1}y'] = [-30, 30]
+    model_parameters_limits[f'c{i+1}z'] = [10, 30]
+    model_parameters_limits[f's{i+1}x'] = [10, 40]
+    model_parameters_limits[f's{i+1}y'] = [10, 40]
 # ant_parameters_names = parametric_ant_utils.get_parameters_names()
 
 
@@ -86,7 +106,7 @@ path_to_save_mesh = os.path.join(final_dir, 'STLs')
 
 
 # --- for export STLs
-file_names = ['Antenna_PEC', 'Antenna_Feed', 'Env_Vacuum', 'Env_PEC']
+file_names = ['Antenna_PEC', 'Antenna_FEED', 'Antenna_ROGERS', 'Env_PEC']
 
 # file_names = ['Antenna_PEC', 'Antenna_Feed', 'Antenna_Feed_PEC',
 #               'Env_FR4', 'Env_Vacuum']
@@ -104,7 +124,7 @@ results = cst.results.ProjectFile(project_path, allow_interactive=True)
 # run the function that is currently called 'main' to generate the cst file
 overall_sim_time = time.time()
 ants_count = 0
-starting_index = 15000
+starting_index = 10000
 for run_ID_local in range(0, 10000):  #15001-starting_index-1 % 15067 is problematic!
     run_ID = starting_index + run_ID_local
     if os.path.isfile(save_S11_pic_dir + r'\S_parameters_' + str(
@@ -139,16 +159,16 @@ for run_ID_local in range(0, 10000):  #15001-starting_index-1 % 15067 is problem
         if change_env:
             np.random.seed(run_ID)
             # randomize environment
-            # valid_env = 0
-            # while not valid_env:
-            #     for key, value in model_parameters_limits.items():
-            #         if type(value) == list:
-            #             model_parameters[key] = myround(np.random.uniform(value[0],value[1]),1)
-            #             # update the changed variables in environment and save the current run as previous
-            #             model_parameters[key] = np.max([model_parameters[key], 0.1])
+            valid_env = 0
+            while not valid_env:
+                for key, value in model_parameters_limits.items():
+                    if type(value) == list:
+                        model_parameters[key] = myround(np.random.uniform(value[0],value[1]),5)
+                        # update the changed variables in environment and save the current run as previous
+                        # model_parameters[key] = np.max([model_parameters[key], 0.1])
             #     if (model_parameters['Sz'] / 2 > 20 and
             #         model_parameters['Sy'] >30):
-            #         valid_env = 1
+                    valid_env = 1
             # update model
             for key, value in model_parameters.items():
                 if type(value) != str and key != 'type':
@@ -249,49 +269,49 @@ for run_ID_local in range(0, 10000):  #15001-starting_index-1 % 15067 is problem
 
     # # save and copy the STEP model:
     # # save:
-    # for file_name in file_names:
-    #     VBA_code = r'''Sub Main
-    #     SelectTreeItem("Components'''+'\\'+file_name+r'''")
-    #         Dim path As String
-    #         Path = "./'''+file_name+'''_STEP.stp"
-    #         With STEP
-    #             .Reset
-    #             .FileName(path)
-    #             .WriteSelectedSolids
-    #         End With
-    #     End Sub'''
-    #     project.schematic.execute_vba_code(VBA_code)
-    #     VBA_code = r'''Sub Main
-    #             SelectTreeItem("Components''' + '\\' + file_name + r'''")
-    #                 Dim path As String
-    #                 Path = "./''' + file_name + '''_STL.stl"
-    #                 With STEP
-    #                     .Reset
-    #                     .FileName(path)
-    #                     .WriteSelectedSolids
-    #                 End With
-    #             End Sub'''
-    #     project.schematic.execute_vba_code(VBA_code)
-    # VBA_code = r'''Sub Main
-    #     Dim path As String
-    #     Path = "./Whole_Model_STEP.stp"
-    #     With STEP
-    #         .Reset
-    #         .FileName(path)
-    #         .WriteAll
-    #     End With
-    # End Sub'''
-    # project.schematic.execute_vba_code(VBA_code)
-    # VBA_code = r'''Sub Main
-    #         Dim path As String
-    #         Path = "./Whole_Model_STL.stl"
-    #         With STEP
-    #             .Reset
-    #             .FileName(path)
-    #             .WriteAll
-    #         End With
-    #     End Sub'''
-    # project.schematic.execute_vba_code(VBA_code)
+    for file_name in file_names:
+        VBA_code = r'''Sub Main
+        SelectTreeItem("Components'''+'\\'+file_name+r'''")
+            Dim path As String
+            Path = "./'''+file_name+'''_STEP.stp"
+            With STEP
+                .Reset
+                .FileName(path)
+                .WriteSelectedSolids
+            End With
+        End Sub'''
+        project.schematic.execute_vba_code(VBA_code)
+        VBA_code = r'''Sub Main
+                SelectTreeItem("Components''' + '\\' + file_name + r'''")
+                    Dim path As String
+                    Path = "./''' + file_name + '''_STL.stl"
+                    With STEP
+                        .Reset
+                        .FileName(path)
+                        .WriteSelectedSolids
+                    End With
+                End Sub'''
+        project.schematic.execute_vba_code(VBA_code)
+    VBA_code = r'''Sub Main
+        Dim path As String
+        Path = "./Whole_Model_STEP.stp"
+        With STEP
+            .Reset
+            .FileName(path)
+            .WriteAll
+        End With
+    End Sub'''
+    project.schematic.execute_vba_code(VBA_code)
+    VBA_code = r'''Sub Main
+            Dim path As String
+            Path = "./Whole_Model_STL.stl"
+            With STEP
+                .Reset
+                .FileName(path)
+                .WriteAll
+            End With
+        End Sub'''
+    project.schematic.execute_vba_code(VBA_code)
     # now copy:
     target_STEP_folder = models_path + '\\' + str(run_ID)
     for filename in os.listdir(path_to_save_mesh):

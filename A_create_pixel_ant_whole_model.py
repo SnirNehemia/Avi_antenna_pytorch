@@ -441,7 +441,7 @@ def randomize_ant(path_to_save_mesh, model_parameters, grid_size = 16, threshold
 
     # Create an external learnable matrix (logits) of shape (16,16)
     matrix = torch.randn((grid_size, grid_size), requires_grad=True)
-    pixel_data, pixel_probs = create_pixel_mesh(matrix)
+    pixel_data, pixel_probs = create_pixel_mesh(matrix, threshold=threshold)
     # scale to mm:
     pixel_data.pos[:, :2] = pixel_data.pos[:, :2] * scale + antenna_reltive_shift
 
@@ -563,7 +563,7 @@ def randomize_ant(path_to_save_mesh, model_parameters, grid_size = 16, threshold
     # # create ground:
     #
     print('created STLs')
-    return matrix
+    return matrix, threshold
 
 
 if __name__ == "__main__":
@@ -580,7 +580,7 @@ if __name__ == "__main__":
 
     # Create an external learnable matrix (logits) of shape (16,16)
     matrix = torch.randn((grid_size, grid_size), requires_grad=True)
-    pixel_data, pixel_probs = create_pixel_mesh(matrix)
+    pixel_data, pixel_probs = create_pixel_mesh(matrix, threshold=0.2)
     # scale to mm:
     pixel_data.pos[:, :2] = pixel_data.pos[:, :2] * scale + antenna_reltive_shift
 
