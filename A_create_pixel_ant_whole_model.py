@@ -82,7 +82,8 @@ def create_pixel_mesh(matrix, threshold=0.5):
     """
     grid_size = matrix.shape[0]
     # Compute pixel probabilities using sigmoid.
-    pixel_probs = torch.sigmoid(matrix)
+    # pixel_probs = torch.sigmoid(matrix) - was commented on beast starting with sample 30K
+    pixel_probs = matrix
     # Create a mask for active pixels.
     pixel_mask = pixel_probs > threshold
 

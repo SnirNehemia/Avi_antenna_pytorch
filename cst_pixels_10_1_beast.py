@@ -91,6 +91,7 @@ for i in range(3):
     model_parameters_limits[f's{i+1}y'] = [10, 40]
 # ant_parameters_names = parametric_ant_utils.get_parameters_names()
 
+pixel_threshold = 0.25
 
 """ create all tree folder paths """
 # --- from here on I define the paths based on the manually defined project and local path ---
@@ -178,7 +179,7 @@ for run_ID_local in range(0, 10000):  #15001-starting_index-1 % 15067 is problem
                             End Sub'''
                     project.schematic.execute_vba_code(VBA_code)
         if create_new_models: # for new models
-            ant_parameters = randomize_ant(path_to_save_mesh, model_parameters,seed=run_ID, threshold=0.35)
+            ant_parameters = randomize_ant(path_to_save_mesh, model_parameters,seed=run_ID, threshold=pixel_threshold)
             # save picture of the antenna
             # parametric_ant_utils.save_figure(model_parameters, ant_parameters, local_path + project_name, run_ID)
         print('created antenna... ',end='')
@@ -206,7 +207,7 @@ for run_ID_local in range(0, 10000):  #15001-starting_index-1 % 15067 is problem
             results = cst.results.ProjectFile(project_path, allow_interactive=True)
 
             if repeat_count > 2:
-                ant_parameters = randomize_ant(path_to_save_mesh, model_parameters,seed=run_ID, threshold=0.35)
+                ant_parameters = randomize_ant(path_to_save_mesh, model_parameters,seed=run_ID, threshold=pixel_threshold)
                 # for key, value in ant_parameters.items():
                 #     VBA_code = r'''Sub Main
                 #                         StoreParameter("''' + key + '''", ''' + str(value) + ''')
