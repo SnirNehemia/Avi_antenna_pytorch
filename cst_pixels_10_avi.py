@@ -1,0 +1,286 @@
+import os
+import sys
+import torch
+# sys.path.append(r"C:\Program Files\Dassault Systemes\B426CSTEmagConnector\CSTStudio\AMD64\python_cst_libraries")
+sys.path.append(r"C:\Program Files (x86)\CST Studio Suite 2024\AMD64\python_cst_libraries")
+from pathlib import Path
+import pandas as pd
+import cst
+print('can now communicate with ' + cst.__file__) # should print '<PATH_TO_CST_AMD64>\python_cst_libraries\cst\__init__.py'
+# documentation is at "https://space.mit.edu/RADIO/CST_online/Python/main.html"
+# https://github.com/temf/CST_Python_Interface/blob/main/Documentation/CST_with_Python_Documentation.pdf provides examples
+
+import cst.interface
+import cst.results
+import numpy as np
+
+from distutils.dir_util import copy_tree
+import shutil
+import pickle
+import time
+from matplotlib import pyplot as plt
+from datetime import datetime
+
+# import A_create_pixel_ant_whole_model as parametric_ant_utils
+# parametric_ant_utils should have two main functions:
+#   parametric_ant_utils.randomize_ant(model_parameters,seed) - > create the STL for CST
+#   parametric_ant_utils.save_figure() - > save a figure to show the model at a glance
+from parse_farfield import convert_farfield
+from A_create_pixel_ant_whole_model import randomize_ant
+from create_reflector_on_sphere import create_randomized_reflectors
+
+# def myround(x, base=5):
+#     return base * round(x/base)
+
+def open_cst():
+
+    simulation_name = 'CST_pixels_10_reflectors - Avi'
+    # project_name = r'Pixels_CST'
+    # local_path = r'G:\Pixels'
+    final_dir = r'C:\Users\User\Documents\Pixel_model_10_reflectors'
+
+    """ create all tree folder paths """
+    # --- from here on I define the paths based on the manually defined project and local path ---
+
+    project_path = final_dir + "\\" + simulation_name + ".cst"
+    results_path = final_dir+"\\output_avi\\results"
+    surface_currents_source_path = final_dir+"\\" + simulation_name +r'\Export\3d'
+    models_path =  final_dir+"\\output_avi\\models"
+    pattern_source_path = (final_dir+"\\" + simulation_name +
+                      r'\Export\Farfield')
+    save_S11_pic_dir = final_dir+"\\output_avi\\S11_pictures"
+    path_to_save_mesh = os.path.join(final_dir, 'STLs')
+
+    """ open the CST project that we already created """
+
+    cst_instance = cst.interface.DesignEnvironment()
+    project = cst.interface.DesignEnvironment.open_project(cst_instance, project_path)
+
+    results = cst.results.ProjectFile(project_path, allow_interactive=True)
+
+    return cst_instance, project, results
+
+def run_cst(cst_instance, project, results, run_ID):
+
+    """ run the simulations """
+    simulation_name = 'CST_pixels_10_reflectors - Avi'
+    # project_name = r'Pixels_CST'
+    # local_path = r'G:\Pixels'
+    final_dir = r'C:\Users\User\Documents\Pixel_model_10_reflectors'
+
+    """ create all tree folder paths """
+    # --- from here on I define the paths based on the manually defined project and local path ---
+
+    project_path = final_dir + "\\" + simulation_name + ".cst"
+    results_path = final_dir + "\\output_avi\\results"
+    surface_currents_source_path = final_dir + "\\" + simulation_name + r'\Export\3d'
+    models_path = final_dir + "\\output_avi\\models"
+    pattern_source_path = (final_dir + "\\" + simulation_name +
+                           r'\Export\Farfield')
+    save_S11_pic_dir = final_dir + "\\output_avi\\S11_pictures"
+    path_to_save_mesh = os.path.join(final_dir, 'STLs')
+    # run the function that is currently called 'main' to generate the cst file
+    overall_sim_time = time.time()
+
+    if os.path.isfile(save_S11_pic_dir + r'\S_parameters_' + str(
+            run_ID) + '.png'):  # os.path.isdir(models_path + '\\' + str(run_ID)):
+        raise Exception(str(run_ID) + ' ran already')
+
+    print(str(run_ID) + ' running')
+    succeed = 0
+    repeat_count = 0
+    print('time is: %s' % datetime.now())
+    # ------------------------- run cst -----------------------------
+    cst_time = time.time()
+    # create\choose model
+    if not os.path.isdir(models_path + '\\' + str(run_ID)):
+        os.mkdir(models_path + '\\' + str(run_ID))
+    # Delete files in the CST folder to prevent errors
+    target_SPI_folder =final_dir + "\\" + simulation_name +"\\Result"
+    for filename in os.listdir(target_SPI_folder):
+        if filename.endswith('.spi'):
+            os.remove(target_SPI_folder +"\\" + filename)
+    target_delete_folder = final_dir + "\\" + simulation_name +"\\Model\\3D"
+    for filename in os.listdir(target_delete_folder):
+        if filename.endswith('.stp') or filename.endswith('.stl') or filename.endswith('.hlg'):
+            os.remove(target_delete_folder +"\\" + filename)
+    target_delete_folder = final_dir + "\\" + simulation_name +"\\Export\\Farfield"
+    if os.path.isdir(target_delete_folder):
+        for filename in os.listdir(target_delete_folder):
+            if filename.endswith('.txt'):
+                os.remove(target_delete_folder +"\\" + filename)
+    print('deleted SPI, models and results... ', end='')
+    # Determine env parameter by adjusting model_parameters values
+
+    # if create_new_models: # for new models
+    #     matrix, threshold = randomize_ant(path_to_save_mesh, model_parameters,seed=run_ID, threshold=pixel_threshold)
+    #     thetas, phis, reflector_meshes = create_randomized_reflectors(path_to_save_mesh, model_parameters)
+    #     ant_parameters = {'matrix': matrix, 'threshold': threshold, 'thetas': thetas, 'phis': phis}
+    #     # save picture of the antenna
+    #     # parametric_ant_utils.save_figure(model_parameters, ant_parameters, local_path + project_name, run_ID)
+    # print('created antenna... ',end='')
+    """ Rebuild the model and run it """
+    project.model3d.full_history_rebuild()  # I just replaced modeler with model3d
+    print(' run solver... ',end='')
+    try:
+        project.model3d.run_solver()
+        print(' finished simulation... ', end='')
+        succeed = 1
+    except Exception as error:
+        raise Exception('Error in the simulation run')
+
+    """ access results """
+    S_results = results.get_3d().get_result_item(r"1D Results\S-Parameters\S1,1")
+    S11 = np.array(S_results.get_ydata())
+    freq = np.array(S_results.get_xdata())
+    print(' got S11, ', end='')
+    radiation_efficiency_results = results.get_3d().get_result_item(r"1D Results\Efficiencies\Rad. Efficiency [1]")
+    radiation_efficiency = np.array(radiation_efficiency_results.get_ydata())
+    freq_efficiency = np.array(radiation_efficiency_results.get_xdata())
+    total_efficiency_results = results.get_3d().get_result_item(r"1D Results\Efficiencies\Tot. Efficiency [1]")
+    total_efficiency = np.array(total_efficiency_results.get_ydata())
+    print(' got efficiencies, ', end='')
+    # the farfield will be exported using post-proccessing methods and it should be moved to a designated location and renamed
+    print(' got results... ',end='')
+    folder_path = Path(results_path + '\\' + str(run_ID))
+    folder_path.mkdir(parents=True, exist_ok=True)
+
+    # save the farfield and surface currents
+    copy_tree(surface_currents_source_path, results_path + '\\' + str(run_ID))
+    for filename in os.listdir(surface_currents_source_path):
+        df = pd.read_csv(os.path.join(surface_currents_source_path, filename),
+                         delimiter=';')  # Load the data into a pandas DataFrame
+
+        surface_data = {
+            '#x [mm]': np.array(df['#x [mm]'].values, dtype=np.float16),  # X coordinates in mm
+            'y [mm]': np.array(df['y [mm]'].values, dtype=np.float16),  # Y coordinates in mm
+            'z [mm]': np.array(df['z [mm]'].values, dtype=np.float16),  # Z coordinates in mm
+            'KxRe [A/m]': np.array(df['KxRe [A/m]'].values, dtype=np.float16),  # Real part of Kx
+            'KxIm [A/m]': np.array(df['KxIm [A/m]'].values, dtype=np.float16),  # Imaginary part of Kx
+            'KyRe [A/m]': np.array(df['KyRe [A/m]'].values, dtype=np.float16),  # Real part of Ky
+            'KyIm [A/m]': np.array(df['KyIm [A/m]'].values, dtype=np.float16),  # Imaginary part of Ky
+            'KzRe [A/m]': np.array(df['KzRe [A/m]'].values, dtype=np.float16),  # Real part of Kz
+            'KzIm [A/m]': np.array(df['KzIm [A/m]'].values, dtype=np.float16),  # Imaginary part of Kz
+            'Area [mm^2]': np.array(df['Area [mm^2]'].values, dtype=np.float16)  # Area element in mm^2
+        }
+        suface_current_pkl_file_name = filename.split('.')[0] + '.pkl'
+        path_to_save_dict = os.path.join(results_path + '\\' + str(run_ID), suface_current_pkl_file_name)
+        with open(path_to_save_dict, "wb") as f:
+            pickle.dump(surface_data, f, protocol=pickle.HIGHEST_PROTOCOL)
+        # remove the .csv surface current:
+        surface_current_csv_path = results_path + '\\' + str(run_ID) + '\\' + filename
+        os.remove(surface_current_csv_path)
+
+    convert_farfield(results_path + '\\' + str(run_ID), pattern_source_path)
+
+    # # save and copy the STEP model:
+    # # save:
+    # for file_name in file_names:
+    #     VBA_code = r'''Sub Main
+    #     SelectTreeItem("Components'''+'\\'+file_name+r'''")
+    #         Dim path As String
+    #         Path = "./'''+file_name+'''_STEP.stp"
+    #         With STEP
+    #             .Reset
+    #             .FileName(path)
+    #             .WriteSelectedSolids
+    #         End With
+    #     End Sub'''
+    #     project.schematic.execute_vba_code(VBA_code)
+    #     VBA_code = r'''Sub Main
+    #             SelectTreeItem("Components''' + '\\' + file_name + r'''")
+    #                 Dim path As String
+    #                 Path = "./''' + file_name + '''_STL.stl"
+    #                 With STEP
+    #                     .Reset
+    #                     .FileName(path)
+    #                     .WriteSelectedSolids
+    #                 End With
+    #             End Sub'''
+    #     project.schematic.execute_vba_code(VBA_code)
+    # VBA_code = r'''Sub Main
+    #     Dim path As String
+    #     Path = "./Whole_Model_STEP.stp"
+    #     With STEP
+    #         .Reset
+    #         .FileName(path)
+    #         .WriteAll
+    #     End With
+    # End Sub'''
+    # project.schematic.execute_vba_code(VBA_code)
+    # VBA_code = r'''Sub Main
+    #         Dim path As String
+    #         Path = "./Whole_Model_STL.stl"
+    #         With STEP
+    #             .Reset
+    #             .FileName(path)
+    #             .WriteAll
+    #         End With
+    #     End Sub'''
+    # project.schematic.execute_vba_code(VBA_code)
+    # now copy:
+    target_STEP_folder = models_path + '\\' + str(run_ID)
+    for filename in os.listdir(path_to_save_mesh):
+        if filename.endswith('.stp'):
+            shutil.copy(path_to_save_mesh + '\\' + filename, target_STEP_folder)
+        if filename.endswith('.stl'):
+            shutil.copy(path_to_save_mesh + '\\' + filename, target_STEP_folder)
+        if filename.endswith('.hlg'):
+            shutil.copy(path_to_save_mesh + '\\' + filename, target_STEP_folder)
+    # save parameters of model and environment
+    # file_name = models_path + '\\' + str(run_ID) + '\\model_parameters.pickle'
+    # file = open(file_name, 'wb')
+    # pickle.dump(model_parameters, file)
+    # file.close()
+    # file_name = models_path + '\\' + str(run_ID) + '\\ant_parameters.pickle'
+    # file = open(file_name, 'wb')
+    # pickle.dump(ant_parameters, file)
+    # file.close()
+    # save picture of the S11
+    plt.ioff()
+    f, ax1 = plt.subplots()
+    ax1.plot(freq, 20 * np.log10(np.abs(S11)))
+    ax1.set_ylim(ymin=-20, ymax=0)
+    ax1.set_ylabel('|S11|', color='C0')
+    ax1.tick_params(axis='y', color='C0', labelcolor='C0')
+    ax2 = ax1.twinx()
+    ax2.plot(freq, np.angle(S11), 'C1')
+    ax2.set_ylim(ymin=-np.pi, ymax=np.pi)
+    ax2.set_ylabel('phase [rad]', color='C1')
+    ax2.tick_params(axis='y', color='C1', labelcolor='C1')
+    plt.title('S parameters')
+    plt.show(block=False)
+    f.savefig(save_S11_pic_dir + r'\S_parameters_' + str(run_ID) + '.png')
+    plt.close(f)
+
+    # save the S parameters data
+    file_name = results_path + '\\' + str(run_ID) + '\\S_parameters.pickle'
+    file = open(file_name, 'wb')
+    pickle.dump([S11, freq], file)
+    file.close()
+    # save the efficiencies data
+    file_name = results_path + '\\' + str(run_ID) + '\\Efficiency.pickle'
+    file = open(file_name, 'wb')
+    pickle.dump([total_efficiency, radiation_efficiency, freq_efficiency], file)
+    file.close()
+
+    print('saved results. ')
+    print(f'\t RUNTIME for #{run_ID:.0f}:\n\t\t ant #{run_ID:.0f} time: {(time.time()-cst_time)/60:.1f} min \n\t\t overall time: {(time.time()-overall_sim_time)/60/60:.2f} hours')
+
+    return
+
+if __name__ == '__main__':
+    # example for usage
+
+    # copy the STLS to the target_STL_folder!
+    target_STL_folder = r'C:\Users\User\Documents\Pixel_model_10_reflectors\STLs - Avi'
+    source_STL_folder = r'C:\Users\User\Documents\Pixel_model_10_reflectors\STLs'
+    for filename in os.listdir(source_STL_folder):
+        if filename.endswith('.stl'):
+            shutil.copy(source_STL_folder + '\\' + filename, target_STL_folder)
+
+    # open the CST program
+    cst_instance, project, results = open_cst()
+
+    # run the simulation and save it in a folder called run_ID
+    run_cst(cst_instance, project, results, run_ID=0)
