@@ -7,6 +7,40 @@ from torch_geometric.utils import to_networkx
 import networkx as nx
 
 
+def plot_3d_points_edges(points, edges, sphere_edges=[], title=None):
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    # Plot points
+    ax.scatter(points[:, 0], points[:, 1], points[:, 2], c='b', marker='o')
+
+    # Plot edges
+    for edge in edges:
+        start_point = points[edge[0]]
+        end_point = points[edge[1]]
+        ax.plot([start_point[0], end_point[0]],
+                [start_point[1], end_point[1]],
+                [start_point[2], end_point[2]], c='r')
+
+    if sphere_edges:
+        # Plot edges
+        for edge in sphere_edges:
+            start_point = points[edge[0]]
+            end_point = points[edge[1]]
+            ax.plot([start_point[0], end_point[0]],
+                    [start_point[1], end_point[1]],
+                    [start_point[2], end_point[2]], c='g')
+
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    if title:
+        ax.set_title(title, fontsize=10)
+    # save_path = '/home/avrahame1/Desktop/git/GNN-for-Antenna-design/CST_meshes/playground_mesh.pdf'
+    # plt.savefig(save_path)
+    plt.show()
+
+
 def faces_to_edge_index(faces):
     """
     Convert a (num_faces x 3) tensor to an edge_index tensor.
@@ -441,7 +475,7 @@ def randomize_ant(path_to_save_mesh, model_parameters, grid_size = 16, threshold
     antenna_reltive_shift = (size_of_ground - size_of_patch_in_mm) / 2
 
     # Create an external learnable matrix (logits) of shape (16,16)
-    matrix = torch.randn((grid_size, grid_size), requires_grad=True)
+    matrix = torch.rand((grid_size, grid_size), requires_grad=True)
     pixel_data, pixel_probs = create_pixel_mesh(matrix, threshold=threshold)
     # scale to mm:
     pixel_data.pos[:, :2] = pixel_data.pos[:, :2] * scale + antenna_reltive_shift

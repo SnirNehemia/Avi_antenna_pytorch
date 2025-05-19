@@ -27,16 +27,18 @@ from datetime import datetime
 #   parametric_ant_utils.save_figure() - > save a figure to show the model at a glance
 from parse_farfield import convert_farfield
 from A_create_pixel_ant_whole_model import randomize_ant
+from create_reflector_on_sphere import create_randomized_reflectors
+
 # def myround(x, base=5):
 #     return base * round(x/base)
 
 """ define run parameters """
 # --- define local path and project name
 
-simulation_name = 'CST_pixels_10_refined'
+simulation_name = 'CST_pixels_10_reflectors'
 # project_name = r'Pixels_CST'
 # local_path = r'G:\Pixels'
-final_dir = r'C:\Users\User\Documents\Pixel_model_10_refined'
+final_dir = r'C:\Users\User\Documents\Pixel_model_10_reflectors'
 
 # -------- rogers RO4003 --------
 model_parameters = {
@@ -48,7 +50,10 @@ model_parameters = {
     'ground_x': 50,
     'ground_y': 50,
     'eps_r': 3.55,
-    'tan_d': 0.0027
+    'tan_d': 0.0027,
+    'radius': 75,
+    'box_size': 50,
+    'num_of_reflectors': 2
 }
 pixel_threshold = 0.5
 # -------- vacuum --------
@@ -104,7 +109,7 @@ results = cst.results.ProjectFile(project_path, allow_interactive=True)
 # run the function that is currently called 'main' to generate the cst file
 overall_sim_time = time.time()
 ants_count = 0
-starting_index = 10000
+starting_index = 300
 for run_ID_local in range(0, 10000):  #15001-starting_index-1 % 15067 is problematic!
     run_ID = starting_index + run_ID_local
     if os.path.isfile(save_S11_pic_dir + r'\S_parameters_' + str(
@@ -158,7 +163,9 @@ for run_ID_local in range(0, 10000):  #15001-starting_index-1 % 15067 is problem
                             End Sub'''
                     project.schematic.execute_vba_code(VBA_code)
         if create_new_models: # for new models
-            ant_parameters = randomize_ant(path_to_save_mesh, model_parameters,seed=run_ID, threshold=pixel_threshold)
+            matrix, threshold = randomize_ant(path_to_save_mesh, model_parameters,seed=run_ID, threshold=pixel_threshold)
+            thetas, phis, reflector_meshes = create_randomized_reflectors(path_to_save_mesh, model_parameters)
+            ant_parameters = {'matrix': matrix, 'threshold': threshold, 'thetas': thetas, 'phis': phis}
             # save picture of the antenna
             # parametric_ant_utils.save_figure(model_parameters, ant_parameters, local_path + project_name, run_ID)
         print('created antenna... ',end='')
@@ -187,6 +194,9 @@ for run_ID_local in range(0, 10000):  #15001-starting_index-1 % 15067 is problem
 
             if repeat_count > 2:
                 ant_parameters = randomize_ant(path_to_save_mesh, model_parameters,seed=run_ID, threshold=pixel_threshold)
+                thetas, phis, reflector_meshes = create_randomized_reflectors(path_to_save_mesh, model_parameters)
+                ant_parameters['thetas'] = thetas
+                ant_parameters['phis'] = phis
                 # for key, value in ant_parameters.items():
                 #     VBA_code = r'''Sub Main
                 #                         StoreParameter("''' + key + '''", ''' + str(value) + ''')
