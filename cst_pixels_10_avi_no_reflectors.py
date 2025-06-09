@@ -34,7 +34,7 @@ from create_reflector_on_sphere import create_randomized_reflectors
 
 def open_cst():
 
-    simulation_name = 'CST_pixels_10_reflectors - Avi'
+    simulation_name = 'CST_pixels_10_no_reflectors - Avi'
     # project_name = r'Pixels_CST'
     # local_path = r'G:\Pixels'
     final_dir = r'C:\Users\User\Documents\Pixel_model_10_reflectors'
@@ -63,7 +63,7 @@ def open_cst():
 def run_cst(cst_instance, project, results, run_ID):
 
     """ run the simulations """
-    simulation_name = 'CST_pixels_10_reflectors - Avi'
+    simulation_name = 'CST_pixels_10_no_reflectors - Avi'
     # project_name = r'Pixels_CST'
     # local_path = r'G:\Pixels'
     final_dir = r'C:\Users\User\Documents\Pixel_model_10_reflectors'
@@ -72,12 +72,12 @@ def run_cst(cst_instance, project, results, run_ID):
     # --- from here on I define the paths based on the manually defined project and local path ---
 
     project_path = final_dir + "\\" + simulation_name + ".cst"
-    results_path = final_dir + "\\output_avi\\results"
+    results_path = final_dir + "\\output_avi_no_reflectors\\results"
     surface_currents_source_path = final_dir + "\\" + simulation_name + r'\Export\3d'
-    models_path = final_dir + "\\output_avi\\models"
+    models_path = final_dir + "\\output_avi_no_reflectors\\models"
     pattern_source_path = (final_dir + "\\" + simulation_name +
                            r'\Export\Farfield')
-    save_S11_pic_dir = final_dir + "\\output_avi\\S11_pictures"
+    save_S11_pic_dir = final_dir + "\\output_avi_no_reflectors\\S11_pictures"
     path_to_save_mesh = os.path.join(final_dir, 'STLs')
     # run the function that is currently called 'main' to generate the cst file
     overall_sim_time = time.time()
@@ -272,10 +272,12 @@ def run_cst(cst_instance, project, results, run_ID):
 if __name__ == '__main__':
     # example for usage
 
+    # move your STLs to the folder 'C:\Users\User\Documents\Pixel_model_10_reflectors\STLs'
+
     # copy the STLS to the target_STL_folder!
     # the target_STL_folder should remain unchanged, only change the source_STL_folder to the directory where you save
     # your STLs
-    target_STL_folder = r'C:\Users\User\Documents\Pixel_model_10_reflectors\STLs - Avi'
+    target_STL_folder = r'C:\Users\User\Documents\Pixel_model_10_reflectors\STLs_avi_no_reflectors'
     source_STL_folder = r'C:\Users\User\Documents\Pixel_model_10_reflectors\STLs'
     for filename in os.listdir(source_STL_folder):
         if filename.endswith('.stl'):
@@ -289,3 +291,5 @@ if __name__ == '__main__':
 
     # you can actually generate another STL configuration and run it in a loop.
     # it saves all of the results in 'C:\Users\User\Documents\Pixel_model_10_reflectors\output_avi'
+
+    print('finished run')
