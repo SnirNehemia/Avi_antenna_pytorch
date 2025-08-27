@@ -119,7 +119,7 @@ def create_pixel_mesh(matrix, threshold=0.5):
     # pixel_probs = torch.sigmoid(matrix) - was commented on beast starting with sample 30K
     pixel_probs = matrix
     # Create a mask for active pixels.
-    pixel_mask = pixel_probs > threshold
+    pixel_mask = pixel_probs >= threshold
 
     vertices = []
     faces = []
@@ -475,8 +475,18 @@ def randomize_ant(path_to_save_mesh, model_parameters, grid_size = 16, threshold
     antenna_reltive_shift = (size_of_ground - size_of_patch_in_mm) / 2
 
     # Create an external learnable matrix (logits) of shape (16,16)
-    matrix = torch.rand((grid_size, grid_size), requires_grad=True)
-    pixel_data, pixel_probs = create_pixel_mesh(matrix, threshold=threshold)
+    matrix = torch.rand((grid_size, grid_size), requires_grad=False)
+    valid_matrix = len(matrix[matrix > threshold]) == 0
+    count_retries = 0
+    while not valid_matrix:  # retry for empty matrices
+        matrix = torch.rand((grid_size, grid_size), requires_grad=False)
+        valid_matrix = len(matrix[matrix > threshold]) == 0
+        if count_retries >10:  # deal with too small thresholds
+            threshold -= 0.05
+    origin_matrix = matrix.clone()
+    matrix[origin_matrix > threshold] = 0.5*torch.rand(len(origin_matrix[origin_matrix > threshold]))+0.5
+    matrix[origin_matrix <= threshold] = 0.49999 * torch.rand(len(origin_matrix[origin_matrix <= threshold]))
+    pixel_data, pixel_probs = create_pixel_mesh(matrix, threshold=0.5)
     # scale to mm:
     pixel_data.pos[:, :2] = pixel_data.pos[:, :2] * scale + antenna_reltive_shift
 
@@ -598,7 +608,7 @@ def randomize_ant(path_to_save_mesh, model_parameters, grid_size = 16, threshold
     # # create ground:
     #
     print('created STLs')
-    return matrix, threshold
+    return matrix, 0.5
 
 
 if __name__ == "__main__":

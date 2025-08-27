@@ -270,26 +270,41 @@ def run_cst(cst_instance, project, results, run_ID):
     return
 
 if __name__ == '__main__':
-    # example for usage
 
-    # move your STLs to the folder 'C:\Users\User\Documents\Pixel_model_10_reflectors\STLs'
+    # Path to the directory that contains the folders
+    parent_dir = r'C:\Users\User\Desktop\avi_rf\opt_ant_no reflectors_thresh_03'
+    # List all entries in the directory
+    folders = [f for f in os.listdir(parent_dir) if os.path.isdir(os.path.join(parent_dir, f))]
 
-    # copy the STLS to the target_STL_folder!
-    # the target_STL_folder should remain unchanged, only change the source_STL_folder to the directory where you save
-    # your STLs
-    target_STL_folder = r'C:\Users\User\Documents\Pixel_model_10_reflectors\STLs_avi_no_reflectors'
-    source_STL_folder = r'C:\Users\User\Documents\Pixel_model_10_reflectors\STLs'
-    for filename in os.listdir(source_STL_folder):
-        if filename.endswith('.stl'):
-            shutil.copy(source_STL_folder + '\\' + filename, target_STL_folder)
+    # Sort numerically (since folder names are numbers)
+    folders = sorted(folders, key=lambda x: int(x))
 
     # open the CST program
     cst_instance, project, results = open_cst()
 
-    # run the simulation and save it in a folder called run_ID
-    run_cst(cst_instance, project, results, run_ID=0)
+    # loop over example:
+    for folder in folders:
 
-    # you can actually generate another STL configuration and run it in a loop.
-    # it saves all of the results in 'C:\Users\User\Documents\Pixel_model_10_reflectors\output_avi'
+        # example for usage
+        # move your STLs to the folder 'C:\Users\User\Documents\Pixel_model_10_reflectors\STLs'
+        # copy the STLS to the target_STL_folder!
+        # the target_STL_folder should remain unchanged, only change the source_STL_folder to the directory where you save
+        # your STLs
+        target_STL_folder = r'C:\Users\User\Documents\Pixel_model_10_reflectors\STLs_avi_no_reflectors'  # DO NOT CHANGE!
 
-    print('finished run')
+        # source_STL_folder = r'C:\Users\User\Desktop\avi_rf\pixel_example\ex_11919'
+        source_STL_folder = os.path.join(parent_dir, folder)
+
+        for filename in os.listdir(source_STL_folder):
+            if filename.endswith('.stl'):
+                shutil.copy(source_STL_folder + '\\' + filename, target_STL_folder)
+
+        # run the simulation and save it in a folder called run_ID
+        run_id = int(folder)
+        run_cst(cst_instance, project, results, run_ID=run_id)
+
+        # you can actually generate another STL configuration and run it in a loop.
+        # it saves all of the results in 'C:\Users\User\Documents\Pixel_model_10_reflectors\output_avi'
+
+        print('finished run: ', run_id)
+        # project.close()
