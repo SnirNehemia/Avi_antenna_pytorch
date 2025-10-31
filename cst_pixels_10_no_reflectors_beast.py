@@ -109,7 +109,7 @@ results = cst.results.ProjectFile(project_path, allow_interactive=True)
 # run the function that is currently called 'main' to generate the cst file
 overall_sim_time = time.time()
 ants_count = 0
-starting_index = 0
+starting_index = 20000
 for run_ID_local in range(0, 10000):  #15001-starting_index-1 % 15067 is problematic!
     run_ID = starting_index + run_ID_local
     if os.path.isfile(save_S11_pic_dir + r'\S_parameters_' + str(
@@ -163,7 +163,9 @@ for run_ID_local in range(0, 10000):  #15001-starting_index-1 % 15067 is problem
                             End Sub'''
                     project.schematic.execute_vba_code(VBA_code)
         if create_new_models: # for new models
-            matrix, threshold = randomize_ant(path_to_save_mesh, model_parameters,seed=run_ID, threshold=pixel_threshold)
+            # matrix, threshold = randomize_ant(path_to_save_mesh, model_parameters,seed=run_ID, threshold=pixel_threshold)
+            matrix, threshold = randomize_ant(path_to_save_mesh, model_parameters, seed=run_ID,
+                                              threshold=np.random.uniform(0,1))
             # thetas, phis, reflector_meshes = create_randomized_reflectors(path_to_save_mesh, model_parameters)
             thetas, phis = None, None
             ant_parameters = {'matrix': matrix, 'threshold': threshold, 'thetas': thetas, 'phis': phis}
