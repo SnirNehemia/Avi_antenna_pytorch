@@ -110,7 +110,7 @@ results = cst.results.ProjectFile(project_path, allow_interactive=True)
 overall_sim_time = time.time()
 ants_count = 0
 starting_index = 50000
-for run_ID_local in range(0, 10000):  #15001-starting_index-1 % 15067 is problematic!
+for run_ID_local in range(0, 20000):  #15001-starting_index-1 % 15067 is problematic!
     run_ID = starting_index + run_ID_local
     if os.path.isfile(save_S11_pic_dir + r'\S_parameters_' + str(
             run_ID) + '.png'):  # os.path.isdir(models_path + '\\' + str(run_ID)):

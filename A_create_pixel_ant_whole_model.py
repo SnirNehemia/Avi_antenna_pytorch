@@ -476,13 +476,15 @@ def randomize_ant(path_to_save_mesh, model_parameters, grid_size = 16, threshold
 
     # Create an external learnable matrix (logits) of shape (16,16)
     matrix = torch.rand((grid_size, grid_size), requires_grad=False)
-    valid_matrix = len(matrix[matrix > threshold]) == 0
+    valid_matrix = len(matrix[matrix > threshold]) > 0
     count_retries = 0
     while not valid_matrix:  # retry for empty matrices
         matrix = torch.rand((grid_size, grid_size), requires_grad=False)
-        valid_matrix = len(matrix[matrix > threshold]) == 0
+        valid_matrix = len(matrix[matrix > threshold]) > 0
+        count_retries += 1
         if count_retries >10:  # deal with too small thresholds
             threshold -= 0.05
+            print(f'reduced threshold to {threshold}')
     origin_matrix = matrix.clone()
     matrix[origin_matrix > threshold] = 0.5*torch.rand(len(origin_matrix[origin_matrix > threshold]))+0.5
     matrix[origin_matrix <= threshold] = 0.49999 * torch.rand(len(origin_matrix[origin_matrix <= threshold]))

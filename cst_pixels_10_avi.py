@@ -78,13 +78,15 @@ def run_cst(cst_instance, project, results, run_ID):
     pattern_source_path = (final_dir + "\\" + simulation_name +
                            r'\Export\Farfield')
     save_S11_pic_dir = final_dir + "\\output_avi\\S11_pictures"
-    path_to_save_mesh = os.path.join(final_dir, 'STLs')
+    path_to_save_mesh = os.path.join(final_dir, 'STLs - Avi')
     # run the function that is currently called 'main' to generate the cst file
     overall_sim_time = time.time()
 
     if os.path.isfile(save_S11_pic_dir + r'\S_parameters_' + str(
             run_ID) + '.png'):  # os.path.isdir(models_path + '\\' + str(run_ID)):
-        raise Exception(str(run_ID) + ' ran already')
+        # raise Exception(str(run_ID) + ' ran already')
+        print(str(run_ID) + ' ran already')
+        return
 
     print(str(run_ID) + ' running')
     succeed = 0
@@ -265,8 +267,8 @@ def run_cst(cst_instance, project, results, run_ID):
     file.close()
 
     print('saved results. ')
-    print(f'\t RUNTIME for #{run_ID:.0f}:\n\t\t ant #{run_ID:.0f} time: {(time.time()-cst_time)/60:.1f} min \n\t\t overall time: {(time.time()-overall_sim_time)/60/60:.2f} hours')
-
+    # print(f'\t RUNTIME for #{run_ID:.0f}:\n\t\t ant #{run_ID:.0f} time: {(time.time()-cst_time)/60:.1f} min \n\t\t overall time: {(time.time()-overall_sim_time)/60/60:.2f} hours')
+    print('RUNTIME for ' +str(run_ID) + ' ant\n' + 'time: ' + str((time.time()-cst_time)/60) + ' min\n' +'overall time: '+ str((time.time()-overall_sim_time)/60/60)+ ' hours' )
     return
 
 if __name__ == '__main__':
@@ -293,12 +295,12 @@ if __name__ == '__main__':
     # # it saves all of the results in 'C:\Users\User\Documents\Pixel_model_10_reflectors\output_avi'
     #################################################################
     # Path to the directory that contains the folders
-    parent_dir = r'C:\Users\User\Desktop\avi_rf\stl_files_reg_clip'
+    parent_dir = r'C:\Users\User\Downloads\stl_files_manual_test_full\stl_files_manual_test_full'
     # List all entries in the directory
     folders = [f for f in os.listdir(parent_dir) if os.path.isdir(os.path.join(parent_dir, f))]
 
     # Sort numerically (since folder names are numbers)
-    folders = sorted(folders, key=lambda x: int(x))
+    # folders = sorted(folders, key=lambda x: int(x))
 
     # open the CST program
     cst_instance, project, results = open_cst()
@@ -321,7 +323,7 @@ if __name__ == '__main__':
                 shutil.copy(source_STL_folder + '\\' + filename, target_STL_folder)
 
         # run the simulation and save it in a folder called run_ID
-        run_id = int(folder)
+        run_id = folder
         run_cst(cst_instance, project, results, run_ID=run_id)
 
         # you can actually generate another STL configuration and run it in a loop.

@@ -1,5 +1,7 @@
 import os
 import sys
+from tkinter.scrolledtext import example
+
 import torch
 # sys.path.append(r"C:\Program Files\Dassault Systemes\B426CSTEmagConnector\CSTStudio\AMD64\python_cst_libraries")
 sys.path.append(r"C:\Program Files (x86)\CST Studio Suite 2024\AMD64\python_cst_libraries")
@@ -60,7 +62,7 @@ def open_cst():
 
     return cst_instance, project, results
 
-def run_cst(cst_instance, project, results, run_ID):
+def run_cst(cst_instance, project, results, run_ID, label=None):
 
     """ run the simulations """
     simulation_name = 'CST_pixels_10_no_reflectors - Avi'
@@ -250,7 +252,12 @@ def run_cst(cst_instance, project, results, run_ID):
     ax2.tick_params(axis='y', color='C1', labelcolor='C1')
     plt.title('S parameters')
     plt.show(block=False)
-    f.savefig(save_S11_pic_dir + r'\S_parameters_' + str(run_ID) + '.png')
+    path_to_save_s_param = save_S11_pic_dir + r'\S_parameters_' + str(run_ID) + '.png'
+    if label != None:
+        path_to_save_s_param = save_S11_pic_dir + r'\S_parameters_' + 'label_ ' + str(label)  + '_run_ID_'+ str(run_ID) + '.png'
+
+
+    f.savefig(path_to_save_s_param)
     plt.close(f)
 
     # save the S parameters data
@@ -272,19 +279,30 @@ def run_cst(cst_instance, project, results, run_ID):
 if __name__ == '__main__':
 
     # Path to the directory that contains the folders
-    parent_dir = r'C:\Users\User\Desktop\avi_rf\opt_ant_no reflectors_thresh_03'
+    parent_dir = r'C:\Users\User\Downloads\antenna_FMNIST_Train\antenna_FMNIST_Train'
     # List all entries in the directory
     folders = [f for f in os.listdir(parent_dir) if os.path.isdir(os.path.join(parent_dir, f))]
 
     # Sort numerically (since folder names are numbers)
     folders = sorted(folders, key=lambda x: int(x))
 
+    # lets get the examples that ran already based on the result directory"
+    CST_output_dir = r'C:\Users\User\Documents\Pixel_model_10_reflectors\output_avi_no_reflectors'
+    list_of_examples_that_ran_already = os.listdir(CST_output_dir+ '\\results')
+
     # open the CST program
     cst_instance, project, results = open_cst()
 
     # loop over example:
     for folder in folders:
+        if folder in list_of_examples_that_ran_already:
+            continue
 
+        # load label
+        ant_prams_path = parent_dir + '\\' + folder +'\\matrix_and_env_dict.pkl'
+        with open(ant_prams_path, 'rb') as f:
+            prams = pickle.load(f)
+        class_label = prams['reflectors_dict']['class_label']
         # example for usage
         # move your STLs to the folder 'C:\Users\User\Documents\Pixel_model_10_reflectors\STLs'
         # copy the STLS to the target_STL_folder!
@@ -301,7 +319,7 @@ if __name__ == '__main__':
 
         # run the simulation and save it in a folder called run_ID
         run_id = int(folder)
-        run_cst(cst_instance, project, results, run_ID=run_id)
+        run_cst(cst_instance, project, results, run_ID=run_id, label=class_label)
 
         # you can actually generate another STL configuration and run it in a loop.
         # it saves all of the results in 'C:\Users\User\Documents\Pixel_model_10_reflectors\output_avi'
