@@ -27,16 +27,19 @@ from datetime import datetime
 #   parametric_ant_utils.save_figure() - > save a figure to show the model at a glance
 from parse_farfield import convert_farfield
 from A_create_pixel_ant_whole_model import randomize_ant
+from create_reflector_on_sphere import create_randomized_reflectors
+
 # def myround(x, base=5):
 #     return base * round(x/base)
 
 """ define run parameters """
 # --- define local path and project name
 
-simulation_name = 'CST_pixels_10'
+simulation_name = 'CST_pixels_10_reflectors'
 # project_name = r'Pixels_CST'
 # local_path = r'G:\Pixels'
-final_dir = os.path.join(r'G:\Pixels', r'Pixels_CST')
+final_dir = r'G:\Pixels\Pixels_reflector'
+
 
 # -------- rogers RO4003 --------
 model_parameters = {
@@ -48,9 +51,12 @@ model_parameters = {
     'ground_x': 50,
     'ground_y': 50,
     'eps_r': 3.55,
-    'tan_d': 0.0027
+    'tan_d': 0.0027,
+    'radius': 75,
+    'box_size': 50,
+    'num_of_reflectors': 2
 }
-
+pixel_threshold = 0.5
 # -------- vacuum --------
 # model_parameters = {
 #     'type':10,
@@ -158,7 +164,9 @@ for run_ID_local in range(0, 10000):  #15001-starting_index-1 % 15067 is problem
                             End Sub'''
                     project.schematic.execute_vba_code(VBA_code)
         if create_new_models: # for new models
-            ant_parameters = randomize_ant(path_to_save_mesh, model_parameters,seed=run_ID)
+            matrix, threshold = randomize_ant(path_to_save_mesh, model_parameters,seed=run_ID, threshold=pixel_threshold)
+            thetas, phis, reflector_meshes = create_randomized_reflectors(path_to_save_mesh, model_parameters)
+            ant_parameters = {'matrix': matrix, 'threshold': threshold, 'thetas': thetas, 'phis': phis}
             # save picture of the antenna
             # parametric_ant_utils.save_figure(model_parameters, ant_parameters, local_path + project_name, run_ID)
         print('created antenna... ',end='')
@@ -186,12 +194,15 @@ for run_ID_local in range(0, 10000):  #15001-starting_index-1 % 15067 is problem
             results = cst.results.ProjectFile(project_path, allow_interactive=True)
 
             if repeat_count > 2:
-                ant_parameters = randomize_ant(path_to_save_mesh, model_parameters,seed=run_ID)
-                for key, value in ant_parameters.items():
-                    VBA_code = r'''Sub Main
-                                        StoreParameter("''' + key + '''", ''' + str(value) + ''')
-                                        End Sub'''
-                    project.schematic.execute_vba_code(VBA_code)
+                ant_parameters = randomize_ant(path_to_save_mesh, model_parameters,seed=run_ID, threshold=pixel_threshold)
+                thetas, phis, reflector_meshes = create_randomized_reflectors(path_to_save_mesh, model_parameters)
+                ant_parameters['thetas'] = thetas
+                ant_parameters['phis'] = phis
+                # for key, value in ant_parameters.items():
+                #     VBA_code = r'''Sub Main
+                #                         StoreParameter("''' + key + '''", ''' + str(value) + ''')
+                #                         End Sub'''
+                #     project.schematic.execute_vba_code(VBA_code)
                 # save picture of the antenna
                 # parametric_ant_utils.save_figure(model_parameters, ant_parameters, local_path + project_name, run_ID)
                 project.model3d.full_history_rebuild()  # I just replaced modeler with model3d
@@ -216,36 +227,34 @@ for run_ID_local in range(0, 10000):  #15001-starting_index-1 % 15067 is problem
     print(' got efficiencies, ', end='')
     # the farfield will be exported using post-proccessing methods and it should be moved to a designated location and renamed
     print(' got results... ',end='')
+    folder_path = Path(results_path + '\\' + str(run_ID))
+    folder_path.mkdir(parents=True, exist_ok=True)
 
-    # save the farfield
+    # save the farfield and surface currents
     copy_tree(surface_currents_source_path, results_path + '\\' + str(run_ID))
     for filename in os.listdir(surface_currents_source_path):
-
-
         df = pd.read_csv(os.path.join(surface_currents_source_path, filename),
                          delimiter=';')  # Load the data into a pandas DataFrame
 
         surface_data = {
-            '#x [mm]': np.array(df['#x [mm]'].values, dtype=np.float32),  # X coordinates in mm
-            'y [mm]': np.array(df['y [mm]'].values, dtype=np.float32),  # Y coordinates in mm
-            'z [mm]': np.array(df['z [mm]'].values, dtype=np.float32),  # Z coordinates in mm
-            'KxRe [A/m]': np.array(df['KxRe [A/m]'].values, dtype=np.float32),  # Real part of Kx
-            'KxIm [A/m]': np.array(df['KxIm [A/m]'].values, dtype=np.float32),  # Imaginary part of Kx
-            'KyRe [A/m]': np.array(df['KyRe [A/m]'].values, dtype=np.float32),  # Real part of Ky
-            'KyIm [A/m]': np.array(df['KyIm [A/m]'].values, dtype=np.float32),  # Imaginary part of Ky
-            'KzRe [A/m]': np.array(df['KzRe [A/m]'].values, dtype=np.float32),  # Real part of Kz
-            'KzIm [A/m]': np.array(df['KzIm [A/m]'].values, dtype=np.float32),  # Imaginary part of Kz
-            'Area [mm^2]': np.array(df['Area [mm^2]'].values, dtype=np.float32)  # Area element in mm^2
+            '#x [mm]': np.array(df['#x [mm]'].values, dtype=np.float16),  # X coordinates in mm
+            'y [mm]': np.array(df['y [mm]'].values, dtype=np.float16),  # Y coordinates in mm
+            'z [mm]': np.array(df['z [mm]'].values, dtype=np.float16),  # Z coordinates in mm
+            'KxRe [A/m]': np.array(df['KxRe [A/m]'].values, dtype=np.float16),  # Real part of Kx
+            'KxIm [A/m]': np.array(df['KxIm [A/m]'].values, dtype=np.float16),  # Imaginary part of Kx
+            'KyRe [A/m]': np.array(df['KyRe [A/m]'].values, dtype=np.float16),  # Real part of Ky
+            'KyIm [A/m]': np.array(df['KyIm [A/m]'].values, dtype=np.float16),  # Imaginary part of Ky
+            'KzRe [A/m]': np.array(df['KzRe [A/m]'].values, dtype=np.float16),  # Real part of Kz
+            'KzIm [A/m]': np.array(df['KzIm [A/m]'].values, dtype=np.float16),  # Imaginary part of Kz
+            'Area [mm^2]': np.array(df['Area [mm^2]'].values, dtype=np.float16)  # Area element in mm^2
         }
         suface_current_pkl_file_name = filename.split('.')[0] + '.pkl'
-        path_to_save_dict = os.path.join(results_path +'\\' + str(run_ID), suface_current_pkl_file_name )
+        path_to_save_dict = os.path.join(results_path + '\\' + str(run_ID), suface_current_pkl_file_name)
         with open(path_to_save_dict, "wb") as f:
             pickle.dump(surface_data, f, protocol=pickle.HIGHEST_PROTOCOL)
         # remove the .csv surface current:
         surface_current_csv_path = results_path + '\\' + str(run_ID) + '\\' + filename
         os.remove(surface_current_csv_path)
-        
-        
 
     convert_farfield(results_path + '\\' + str(run_ID), pattern_source_path)
 
