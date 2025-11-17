@@ -276,8 +276,21 @@ def run_cst(cst_instance, project, results, run_ID, label=None):
 
     return
 
-if __name__ == '__main__':
 
+def clear_folder(folder_path):
+    for filename in os.listdir(folder_path):
+        file_path = os.path.join(folder_path, filename)
+
+        try:
+            if os.path.isfile(file_path) or os.path.islink(file_path):
+                os.remove(file_path)            # remove file or symlink
+            elif os.path.isdir(file_path):
+                shutil.rmtree(file_path)        # remove directory + contents
+        except Exception as e:
+            print(f"Failed to delete {file_path}: {e}")
+
+if __name__ == '__main__':
+    overall_sim_time = time.time()
     # Path to the directory that contains the folders
     parent_dir = r'C:\Users\User\Downloads\antenna_FMNIST_Train\antenna_FMNIST_Train'
     # List all entries in the directory
@@ -297,6 +310,11 @@ if __name__ == '__main__':
     for folder in folders:
         if folder in list_of_examples_that_ran_already:
             continue
+
+        # clear CST cash:
+        cash_path = r'C:\Users\User\Documents\Pixel_model_10_reflectors\CST_pixels_10_no_reflectors - Avi\Result'
+        clear_folder(cash_path)
+
 
         # load label
         ant_prams_path = parent_dir + '\\' + folder +'\\matrix_and_env_dict.pkl'
@@ -323,6 +341,8 @@ if __name__ == '__main__':
 
         # you can actually generate another STL configuration and run it in a loop.
         # it saves all of the results in 'C:\Users\User\Documents\Pixel_model_10_reflectors\output_avi'
-
+        print(f'overall runtime: {(time.time()-overall_sim_time)/60/60:.1f} hours')
         print('finished run: ', run_id)
         # project.close()
+    print('----------------------- FINISHED RUN -----------------------')
+    print(f'overall runtime: {(time.time()-overall_sim_time)/60/60:.1f} hours')
