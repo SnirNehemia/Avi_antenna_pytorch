@@ -62,7 +62,7 @@ def open_cst():
 
     return cst_instance, project, results
 
-def run_cst(cst_instance, project, results, run_ID, label=None):
+def run_cst(cst_instance, project, results, run_ID, label=None, OG_model_path='', output_folder=''):
 
     """ run the simulations """
     simulation_name = 'CST_pixels_10_no_reflectors - Avi'
@@ -72,15 +72,26 @@ def run_cst(cst_instance, project, results, run_ID, label=None):
 
     """ create all tree folder paths """
     # --- from here on I define the paths based on the manually defined project and local path ---
-
-    project_path = final_dir + "\\" + simulation_name + ".cst"
-    results_path = final_dir + "\\output_avi_no_reflectors\\results"
-    surface_currents_source_path = final_dir + "\\" + simulation_name + r'\Export\3d'
-    models_path = final_dir + "\\output_avi_no_reflectors\\models"
-    pattern_source_path = (final_dir + "\\" + simulation_name +
-                           r'\Export\Farfield')
-    save_S11_pic_dir = final_dir + "\\output_avi_no_reflectors\\S11_pictures"
-    path_to_save_mesh = os.path.join(final_dir, 'STLs')
+    if output_folder=='':
+        project_path = final_dir + "\\" + simulation_name + ".cst"
+        results_path = final_dir + "\\output_avi_no_reflectors\\results"
+        surface_currents_source_path = final_dir + "\\" + simulation_name + r'\Export\3d'
+        models_path = final_dir + "\\output_avi_no_reflectors\\models"
+        pattern_source_path = (final_dir + "\\" + simulation_name +
+                               r'\Export\Farfield')
+        save_S11_pic_dir = final_dir + "\\output_avi_no_reflectors\\S11_pictures"
+    else:
+        project_path = final_dir + "\\" + simulation_name + ".cst"
+        results_path = output_folder + "\\results"
+        surface_currents_source_path = final_dir + "\\" + simulation_name + r'\Export\3d'
+        models_path = output_folder +"\\models"
+        pattern_source_path = (final_dir + "\\" + simulation_name +
+                               r'\Export\Farfield')
+        save_S11_pic_dir = output_folder + "\\S11_pictures"
+    if OG_model_path =='':
+        path_to_save_mesh = os.path.join(final_dir, 'STLs')
+    else:
+        path_to_save_mesh = OG_model_path
     # run the function that is currently called 'main' to generate the cst file
     overall_sim_time = time.time()
 
@@ -165,7 +176,7 @@ def run_cst(cst_instance, project, results, run_ID, label=None):
             'KzIm [A/m]': np.array(df['KzIm [A/m]'].values, dtype=np.float16),  # Imaginary part of Kz
             'Area [mm^2]': np.array(df['Area [mm^2]'].values, dtype=np.float16)  # Area element in mm^2
         }
-        suface_current_pkl_file_name = filename.split('.')[0] + '.pkl'
+        suface_current_pkl_file_name = filename.split('.csv')[0] + '.pkl'
         path_to_save_dict = os.path.join(results_path + '\\' + str(run_ID), suface_current_pkl_file_name)
         with open(path_to_save_dict, "wb") as f:
             pickle.dump(surface_data, f, protocol=pickle.HIGHEST_PROTOCOL)
@@ -173,7 +184,8 @@ def run_cst(cst_instance, project, results, run_ID, label=None):
         surface_current_csv_path = results_path + '\\' + str(run_ID) + '\\' + filename
         os.remove(surface_current_csv_path)
 
-    convert_farfield(results_path + '\\' + str(run_ID), pattern_source_path)
+    frequency_list = ['2400', '2800', '5200', '5600', '6000', '8500', '10000', '1.2e+4', '1.5e+4']
+    convert_farfield(results_path + '\\' + str(run_ID), pattern_source_path, frequency_list)
 
     # # save and copy the STEP model:
     # # save:
@@ -223,12 +235,12 @@ def run_cst(cst_instance, project, results, run_ID, label=None):
     # now copy:
     target_STEP_folder = models_path + '\\' + str(run_ID)
     for filename in os.listdir(path_to_save_mesh):
-        if filename.endswith('.stp'):
-            shutil.copy(path_to_save_mesh + '\\' + filename, target_STEP_folder)
-        if filename.endswith('.stl'):
-            shutil.copy(path_to_save_mesh + '\\' + filename, target_STEP_folder)
-        if filename.endswith('.hlg'):
-            shutil.copy(path_to_save_mesh + '\\' + filename, target_STEP_folder)
+        # if filename.endswith('.stp'):
+        shutil.copy(path_to_save_mesh + '\\' + filename, target_STEP_folder)
+        # if filename.endswith('.stl'):
+        #     shutil.copy(path_to_save_mesh + '\\' + filename, target_STEP_folder)
+        # if filename.endswith('.hlg'):
+        #     shutil.copy(path_to_save_mesh + '\\' + filename, target_STEP_folder)
     # save parameters of model and environment
     # file_name = models_path + '\\' + str(run_ID) + '\\model_parameters.pickle'
     # file = open(file_name, 'wb')
@@ -292,16 +304,17 @@ def clear_folder(folder_path):
 if __name__ == '__main__':
     overall_sim_time = time.time()
     # Path to the directory that contains the folders
-    parent_dir = r'C:\Users\User\Downloads\antenna_FMNIST_Train\antenna_FMNIST_Train'
+    # parent_dir = r'C:\Users\User\Downloads\antenna_FMNIST_Train\antenna_FMNIST_Train'
+    parent_dir = r'C:\Users\User\Downloads\antenna_FMNIST_reflectors_scale_1_5_dist_10'
     # List all entries in the directory
     folders = [f for f in os.listdir(parent_dir) if os.path.isdir(os.path.join(parent_dir, f))]
-
+    output_folder = r'C:\Users\User\Documents\Pixel_model_10_reflectors\output_reflector_MNIST'
     # Sort numerically (since folder names are numbers)
     folders = sorted(folders, key=lambda x: int(x))
 
     # lets get the examples that ran already based on the result directory"
-    CST_output_dir = r'C:\Users\User\Documents\Pixel_model_10_reflectors\output_avi_no_reflectors'
-    list_of_examples_that_ran_already = os.listdir(CST_output_dir+ '\\results')
+    # CST_output_dir = r'C:\Users\User\Documents\Pixel_model_10_reflectors\output_avi_no_reflectors'
+    list_of_examples_that_ran_already = os.listdir(output_folder+ '\\results')
 
     # open the CST program
     cst_instance, project, results = open_cst()
@@ -309,6 +322,7 @@ if __name__ == '__main__':
     # loop over example:
     for folder in folders:
         if folder in list_of_examples_that_ran_already:
+            print(str(folder), ' ran already')
             continue
 
         # clear CST cash:
@@ -337,7 +351,8 @@ if __name__ == '__main__':
 
         # run the simulation and save it in a folder called run_ID
         run_id = int(folder)
-        run_cst(cst_instance, project, results, run_ID=run_id, label=class_label)
+        run_cst(cst_instance, project, results, run_ID=run_id, label=class_label, OG_model_path=source_STL_folder,
+                output_folder=output_folder)
 
         # you can actually generate another STL configuration and run it in a loop.
         # it saves all of the results in 'C:\Users\User\Documents\Pixel_model_10_reflectors\output_avi'
