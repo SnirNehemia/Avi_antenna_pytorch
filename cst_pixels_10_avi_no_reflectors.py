@@ -305,7 +305,7 @@ if __name__ == '__main__':
     overall_sim_time = time.time()
     # Path to the directory that contains the folders
     # parent_dir = r'C:\Users\User\Downloads\antenna_FMNIST_Train\antenna_FMNIST_Train'
-    parent_dir = r'C:\Users\User\Downloads\antenna_FMNIST_reflectors_scale_1_5_dist_10'
+    parent_dir = r'C:\Users\User\Downloads\antenna_FMNIST_reflectors_scale_1_5_dist_3_full\antenna_FMNIST_reflectors_scale_1_5_dist_3_full'
     # List all entries in the directory
     folders = [f for f in os.listdir(parent_dir) if os.path.isdir(os.path.join(parent_dir, f))]
     output_folder = r'C:\Users\User\Documents\Pixel_model_10_reflectors\output_reflector_MNIST'
@@ -319,9 +319,11 @@ if __name__ == '__main__':
     # open the CST program
     cst_instance, project, results = open_cst()
 
+    skip_list = ["3782", "8910"]
+
     # loop over example:
     for folder in folders:
-        if folder in list_of_examples_that_ran_already:
+        if folder in list_of_examples_that_ran_already or folder in skip_list:
             print(str(folder), ' ran already')
             continue
 
@@ -349,10 +351,14 @@ if __name__ == '__main__':
             if filename.endswith('.stl'):
                 shutil.copy(source_STL_folder + '\\' + filename, target_STL_folder)
 
+
         # run the simulation and save it in a folder called run_ID
         run_id = int(folder)
-        run_cst(cst_instance, project, results, run_ID=run_id, label=class_label, OG_model_path=source_STL_folder,
-                output_folder=output_folder)
+        try:
+            run_cst(cst_instance, project, results, run_ID=run_id, label=class_label, OG_model_path=source_STL_folder,
+                    output_folder=output_folder)
+        except:
+            print(f' ---------------------------- failed with {run_id} ------------------------')
 
         # you can actually generate another STL configuration and run it in a loop.
         # it saves all of the results in 'C:\Users\User\Documents\Pixel_model_10_reflectors\output_avi'
