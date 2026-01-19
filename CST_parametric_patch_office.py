@@ -317,9 +317,9 @@ if __name__ == '__main__':
     # # List all entries in the directory
     # folders = [f for f in os.listdir(parent_dir) if os.path.isdir(os.path.join(parent_dir, f))]
     home_dir = r'G:\General_models'  # The folder containing the output folder and the simulation file
-    simulation_name = 'Dipole_no_dielectric'
+    simulation_name = 'Patch'
 
-    output_folder = os.path.join(home_dir, "output_dipole_no_dielectric")
+    output_folder = os.path.join(home_dir, "output_patch")
     # # Sort numerically (since folder names are numbers)
     # folders = sorted(folders, key=lambda x: int(x))
 
@@ -331,13 +331,17 @@ if __name__ == '__main__':
     cst_instance, project, results = open_cst(cst_path)
 
     model_parameters_limits = {
-        'wx': [1,2.5],
-        'l': [5,100],
+        'ground_x': [30,100],
+        'ground_y': [30,100],
+        'feed_x': [-1, 1],
+        'feed_y': [-1, 1]
     }
-    model_parameters = { # the constant ones
+    model_parameters = {  # the constant ones
+        'eps_r': 3.55,
+        'tan_d': 0.0027
     }
-    # components_names = ["PEC_pixels", "PEC_ground", "FEED", "Dielectric"]
-    components_names = ["PEC_pixels", "FEED"]
+    components_names = ["PEC_pixels", "PEC_ground", "FEED", "Dielectric"]
+    # components_names = ["PEC_pixels", "FEED"]
     # loop over example:
     for run_id in range(10000):
         if str(run_id) in os.listdir(os.path.join(output_folder,'results')):
