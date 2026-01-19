@@ -34,24 +34,8 @@ from create_reflector_on_sphere import create_randomized_reflectors
 # def myround(x, base=5):
 #     return base * round(x/base)
 
-def open_cst():
-
-    simulation_name = 'CST_pixels_10_no_reflectors - Avi'
-    # project_name = r'Pixels_CST'
-    # local_path = r'G:\Pixels'
-    final_dir = r'C:\Users\User\Documents\Pixel_model_10_reflectors'
-
-    """ create all tree folder paths """
-    # --- from here on I define the paths based on the manually defined project and local path ---
-
-    project_path = final_dir + "\\" + simulation_name + ".cst"
-    results_path = final_dir+"\\output_avi\\results"
-    surface_currents_source_path = final_dir+"\\" + simulation_name +r'\Export\3d'
-    models_path =  final_dir+"\\output_avi\\models"
-    pattern_source_path = (final_dir+"\\" + simulation_name +
-                      r'\Export\Farfield')
-    save_S11_pic_dir = final_dir+"\\output_avi\\S11_pictures"
-    path_to_save_mesh = os.path.join(final_dir, 'STLs')
+def open_cst(full_path):
+    project_path = full_path
 
     """ open the CST project that we already created """
 
@@ -62,13 +46,65 @@ def open_cst():
 
     return cst_instance, project, results
 
-def run_cst(cst_instance, project, results, run_ID, label=None, OG_model_path='', output_folder=''):
+def save_stl(target_path, components, project):
+
+    for comp in components:
+        path = os.path.join(target_path,f"{comp}.stl")
+        # vba = f'With STL: .Reset: .FileName "{path}": .Export "{comp}": End With'
+        # project.schematic.execute_vba_code(vba)
+        VBA_code = f'''Sub Main
+                        SelectTreeItem("Components\\component1\\{comp}")
+                            Dim path As String
+                            Path = "{path}"
+                            With STEP
+                                .Reset
+                                .FileName(path)
+                                .WriteSelectedSolids
+                            End With
+                        End Sub'''
+        project.schematic.execute_vba_code(VBA_code)
+
+        path = os.path.join(target_path, f"{comp}.stp")
+        VBA_code = f'''Sub Main
+                            SelectTreeItem("Components\\component1\\{comp}")
+                                Dim path As String
+                                Path = "{path}"
+                                With STEP
+                                    .Reset
+                                    .FileName(path)
+                                    .WriteSelectedSolids
+                                End With
+                            End Sub'''
+        project.schematic.execute_vba_code(VBA_code)
+
+def generate_rand_ant(project, run_ID, model_parameters, model_parameters_limits):
+    np.random.seed(run_ID)
+    # randomize environment
+    valid_env = 0
+    for key, value in model_parameters_limits.items():
+        if type(value) == list:
+            model_parameters[key] = np.round(np.random.uniform(value[0], value[1]), 1)
+            # update the changed variables in environment and save the current run as previous
+            model_parameters[key] = np.max([model_parameters[key], 0.1])
+    # update model
+    for key, value in model_parameters.items():
+        if type(value) != str and key != 'type':
+            # print('U-'+key)
+            VBA_code = r'''Sub Main
+                                StoreParameter("''' + key + '''", ''' + str(model_parameters[key]) + ''')
+                                End Sub'''
+            project.schematic.execute_vba_code(VBA_code)
+    return model_parameters
+
+def run_cst(cst_instance, project, results, run_ID, final_dir, simulation_name, output_folder='',
+            model_parameters={}, model_parameters_limits={},
+            components_names=["PEC_pixels","PEC_ground", "FEED", "Dielectric"]):
 
     """ run the simulations """
-    simulation_name = 'CST_pixels_10_no_reflectors - Avi'
+
     # project_name = r'Pixels_CST'
     # local_path = r'G:\Pixels'
-    final_dir = r'C:\Users\User\Documents\Pixel_model_10_reflectors'
+    # final_dir = r'G:\General_models'
 
     """ create all tree folder paths """
     # --- from here on I define the paths based on the manually defined project and local path ---
@@ -88,10 +124,8 @@ def run_cst(cst_instance, project, results, run_ID, label=None, OG_model_path=''
         pattern_source_path = (final_dir + "\\" + simulation_name +
                                r'\Export\Farfield')
         save_S11_pic_dir = output_folder + "\\S11_pictures"
-    if OG_model_path =='':
-        path_to_save_mesh = os.path.join(final_dir, 'STLs')
-    else:
-        path_to_save_mesh = OG_model_path
+    path_to_save_mesh = os.path.join(final_dir, 'STLs')
+
     # run the function that is currently called 'main' to generate the cst file
     overall_sim_time = time.time()
 
@@ -124,6 +158,22 @@ def run_cst(cst_instance, project, results, run_ID, label=None, OG_model_path=''
                 os.remove(target_delete_folder +"\\" + filename)
     print('deleted SPI, models and results... ', end='')
     # Determine env parameter by adjusting model_parameters values
+    # model_parameters_limits = {
+    #     'wx': [1,2.5],
+    #     'l': [2.5,30],
+    #     'dielectric_buffer_x': [0, 10],
+    #     'dielectric_thickness': [0.1, 3.2],
+    #     'dielectric_buffer_z': [0,10],
+    #     'ground_x': [10,100],
+    #     'ground_y': [10, 100]
+    # }
+    # model_parameters = { # the constant ones
+    #     'eps_r': 3.55,
+    #     'tan_d': 0.0027
+    # }
+    model_parameters = generate_rand_ant(project=project, run_ID=run_ID,
+                                         model_parameters=model_parameters,
+                                         model_parameters_limits=model_parameters_limits)
 
     # if create_new_models: # for new models
     #     matrix, threshold = randomize_ant(path_to_save_mesh, model_parameters,seed=run_ID, threshold=pixel_threshold)
@@ -187,65 +237,26 @@ def run_cst(cst_instance, project, results, run_ID, label=None, OG_model_path=''
     frequency_list = ['2400', '2800', '5200', '5600', '6000', '8500', '10000', '1.2e+4', '1.5e+4']
     convert_farfield(results_path + '\\' + str(run_ID), pattern_source_path, frequency_list)
 
-    # # save and copy the STEP model:
-    # # save:
-    # for file_name in file_names:
-    #     VBA_code = r'''Sub Main
-    #     SelectTreeItem("Components'''+'\\'+file_name+r'''")
-    #         Dim path As String
-    #         Path = "./'''+file_name+'''_STEP.stp"
-    #         With STEP
-    #             .Reset
-    #             .FileName(path)
-    #             .WriteSelectedSolids
-    #         End With
-    #     End Sub'''
-    #     project.schematic.execute_vba_code(VBA_code)
-    #     VBA_code = r'''Sub Main
-    #             SelectTreeItem("Components''' + '\\' + file_name + r'''")
-    #                 Dim path As String
-    #                 Path = "./''' + file_name + '''_STL.stl"
-    #                 With STEP
-    #                     .Reset
-    #                     .FileName(path)
-    #                     .WriteSelectedSolids
-    #                 End With
-    #             End Sub'''
-    #     project.schematic.execute_vba_code(VBA_code)
-    # VBA_code = r'''Sub Main
-    #     Dim path As String
-    #     Path = "./Whole_Model_STEP.stp"
-    #     With STEP
-    #         .Reset
-    #         .FileName(path)
-    #         .WriteAll
-    #     End With
-    # End Sub'''
-    # project.schematic.execute_vba_code(VBA_code)
-    # VBA_code = r'''Sub Main
-    #         Dim path As String
-    #         Path = "./Whole_Model_STL.stl"
-    #         With STEP
-    #             .Reset
-    #             .FileName(path)
-    #             .WriteAll
-    #         End With
-    #     End Sub'''
-    # project.schematic.execute_vba_code(VBA_code)
-    # now copy:
-    target_STEP_folder = models_path + '\\' + str(run_ID)
-    for filename in os.listdir(path_to_save_mesh):
-        # if filename.endswith('.stp'):
-        shutil.copy(path_to_save_mesh + '\\' + filename, target_STEP_folder)
-        # if filename.endswith('.stl'):
-        #     shutil.copy(path_to_save_mesh + '\\' + filename, target_STEP_folder)
-        # if filename.endswith('.hlg'):
-        #     shutil.copy(path_to_save_mesh + '\\' + filename, target_STEP_folder)
-    # save parameters of model and environment
-    # file_name = models_path + '\\' + str(run_ID) + '\\model_parameters.pickle'
-    # file = open(file_name, 'wb')
-    # pickle.dump(model_parameters, file)
-    # file.close()
+    # save and copy the STEP model:
+
+    # save:
+    target_path = os.path.join(models_path, str(run_ID))
+    save_stl(target_path=target_path, components=components_names, project=project)
+
+    # # now copy:
+    # target_STEP_folder = models_path + '\\' + str(run_ID)
+    # for filename in os.listdir(path_to_save_mesh):
+    #     # if filename.endswith('.stp'):
+    #     shutil.copy(path_to_save_mesh + '\\' + filename, target_STEP_folder)
+    #     # if filename.endswith('.stl'):
+    #     #     shutil.copy(path_to_save_mesh + '\\' + filename, target_STEP_folder)
+    #     # if filename.endswith('.hlg'):
+    #     #     shutil.copy(path_to_save_mesh + '\\' + filename, target_STEP_folder)
+    # # save parameters of model and environment
+    file_name = models_path + '\\' + str(run_ID) + '\\model_parameters.pickle'
+    file = open(file_name, 'wb')
+    pickle.dump(model_parameters, file)
+    file.close()
     # file_name = models_path + '\\' + str(run_ID) + '\\ant_parameters.pickle'
     # file = open(file_name, 'wb')
     # pickle.dump(ant_parameters, file)
@@ -265,9 +276,6 @@ def run_cst(cst_instance, project, results, run_ID, label=None, OG_model_path=''
     plt.title('S parameters')
     plt.show(block=False)
     path_to_save_s_param = save_S11_pic_dir + r'\S_parameters_' + str(run_ID) + '.png'
-    if label != None:
-        path_to_save_s_param = save_S11_pic_dir + r'\S_parameters_' + 'label_ ' + str(label)  + '_run_ID_'+ str(run_ID) + '.png'
-
 
     f.savefig(path_to_save_s_param)
     plt.close(f)
@@ -303,64 +311,60 @@ def clear_folder(folder_path):
 
 if __name__ == '__main__':
     overall_sim_time = time.time()
-    # Path to the directory that contains the folders
-    # parent_dir = r'C:\Users\User\Downloads\antenna_FMNIST_Train\antenna_FMNIST_Train'
-    parent_dir = r'C:\Users\User\Downloads\antenna_FMNIST_reflectors_scale_1_5_dist_3_full_train\antenna_FMNIST_reflectors_scale_1_5_dist_3_full_train'
-    # List all entries in the directory
-    folders = [f for f in os.listdir(parent_dir) if os.path.isdir(os.path.join(parent_dir, f))]
-    output_folder = r'C:\Users\User\Documents\Pixel_model_10_reflectors\output_reflector_MNIST'
-    # Sort numerically (since folder names are numbers)
-    folders = sorted(folders, key=lambda x: int(x))
+    # # Path to the directory that contains the folders
+    # # parent_dir = r'C:\Users\User\Downloads\antenna_FMNIST_Train\antenna_FMNIST_Train'
+    # parent_dir = r'C:\Users\User\Downloads\antenna_FMNIST_reflectors_scale_1_5_dist_10'
+    # # List all entries in the directory
+    # folders = [f for f in os.listdir(parent_dir) if os.path.isdir(os.path.join(parent_dir, f))]
+    home_dir = r'C:\Users\User\Documents\Classics'  # The folder containing the output folder and the simulation file
+    simulation_name = 'Yagi_no_dielectric'
 
-    # lets get the examples that ran already based on the result directory"
-    # CST_output_dir = r'C:\Users\User\Documents\Pixel_model_10_reflectors\output_avi_no_reflectors'
-    list_of_examples_that_ran_already = os.listdir(output_folder+ '\\results')
+    output_folder = os.path.join(home_dir, "output_yagi_no_dielectric")
+    # # Sort numerically (since folder names are numbers)
+    # folders = sorted(folders, key=lambda x: int(x))
 
+    # # lets get the examples that ran already based on the result directory"
+    # # CST_output_dir = r'C:\Users\User\Documents\Pixel_model_10_reflectors\output_avi_no_reflectors'
+    # list_of_examples_that_ran_already = os.listdir(output_folder+ '\\results')
+    cst_path = os.path.join(home_dir, simulation_name+'.cst')
     # open the CST program
-    cst_instance, project, results = open_cst()
+    cst_instance, project, results = open_cst(cst_path)
 
-    skip_list = ["3782", "8910"]
-
+    model_parameters_limits = {
+        'wx': [1,2.5],
+        'l': [15,80],
+        'scale1': [0.8, 1.2],
+        'scale2': [0.8, 1.2],
+        'scale3': [0.8, 1.2],
+        'scaler': [0.8, 1.2],
+        'spacing1': [0.2, 0.5],
+        'spacing2': [0.2, 0.5],
+        'spacing3': [0.2, 0.5],
+        'spacingr': [0.2, 0.5],
+    }
+    model_parameters = { # the constant ones
+    }
+    # components_names = ["PEC_pixels", "PEC_ground", "FEED", "Dielectric"]
+    components_names = ["PEC_pixels", "FEED"]
     # loop over example:
-    for folder in folders:
-        if folder in list_of_examples_that_ran_already or folder in skip_list:
-            print(str(folder), ' ran already')
+    for run_id in range(10000):
+        if str(run_id) in os.listdir(os.path.join(output_folder,'results')):
+            print(str(run_id), ' ran already')
             continue
 
         # clear CST cash:
-        cash_path = r'C:\Users\User\Documents\Pixel_model_10_reflectors\CST_pixels_10_no_reflectors - Avi\Result'
-        clear_folder(cash_path)
-
-
-        # load label
-        ant_prams_path = parent_dir + '\\' + folder +'\\matrix_and_env_dict.pkl'
-        with open(ant_prams_path, 'rb') as f:
-            prams = pickle.load(f)
-        class_label = prams['reflectors_dict']['class_label']
-        # example for usage
-        # move your STLs to the folder 'C:\Users\User\Documents\Pixel_model_10_reflectors\STLs'
-        # copy the STLS to the target_STL_folder!
-        # the target_STL_folder should remain unchanged, only change the source_STL_folder to the directory where you save
-        # your STLs
-        target_STL_folder = r'C:\Users\User\Documents\Pixel_model_10_reflectors\STLs_avi_no_reflectors'  # DO NOT CHANGE!
-
-        # source_STL_folder = r'C:\Users\User\Desktop\avi_rf\pixel_example\ex_11919'
-        source_STL_folder = os.path.join(parent_dir, folder)
-
-        for filename in os.listdir(source_STL_folder):
-            if filename.endswith('.stl'):
-                shutil.copy(source_STL_folder + '\\' + filename, target_STL_folder)
-
+        cache_path = os.path.join(cst_path[:-4],'Result')
+        clear_folder(cache_path)
 
         # run the simulation and save it in a folder called run_ID
-        run_id = int(folder)
-        try:
-            run_cst(cst_instance, project, results, run_ID=run_id, label=class_label, OG_model_path=source_STL_folder,
-                    output_folder=output_folder)
-        except NameError as e:
-            print(f"An exception occurred: {e}")
-            print(f"Exception type: {type(e).__name__}")
-            print(f' ---------------------------- failed with {run_id} ------------------------')
+        run_cst(cst_instance, project, results,
+                final_dir=home_dir,
+                simulation_name=simulation_name,
+                run_ID=run_id,
+                output_folder=output_folder,
+                model_parameters=model_parameters,
+                model_parameters_limits=model_parameters_limits,
+                components_names=components_names)
 
         # you can actually generate another STL configuration and run it in a loop.
         # it saves all of the results in 'C:\Users\User\Documents\Pixel_model_10_reflectors\output_avi'
