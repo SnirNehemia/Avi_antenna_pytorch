@@ -318,9 +318,9 @@ if __name__ == '__main__':
     # # List all entries in the directory
     # folders = [f for f in os.listdir(parent_dir) if os.path.isdir(os.path.join(parent_dir, f))]
     home_dir = r'G:\General_models'  # The folder containing the output folder and the simulation file
-    simulation_name = 'Patch'
+    simulation_name = 'Yagi_1d_y_no_dielectric'
 
-    output_folder = os.path.join(home_dir, "output_patch")
+    output_folder = os.path.join(home_dir, "output_yagi_1d_y")
     # # Sort numerically (since folder names are numbers)
     # folders = sorted(folders, key=lambda x: int(x))
 
@@ -332,17 +332,21 @@ if __name__ == '__main__':
     cst_instance, project, results = open_cst(cst_path)
 
     model_parameters_limits = {
-        'ground_x': [30,100],
-        'ground_y': [30,100],
-        'feed_x': [-1, 1],
-        'feed_y': [-1, 1]
+        'wx': [1, 2.5],
+        'l': [15, 80],
+        'scaley1': [0.8, 1.2],
+        'scaley2': [0.8, 1.2],
+        'scaley3': [0.8, 1.2],
+        'scaleyr': [0.8, 1.2],
+        'spacingy1': [0.2, 0.5],
+        'spacingy2': [0.2, 0.5],
+        'spacingy3': [0.2, 0.5],
+        'spacingyr': [0.2, 0.5],
     }
     model_parameters = {  # the constant ones
-        'eps_r': 3.55,
-        'tan_d': 0.0027
     }
-    components_names = ["PEC_pixels", "PEC_ground", "FEED", "Dielectric"]
-    # components_names = ["PEC_pixels", "FEED"]
+    # components_names = ["PEC_pixels", "PEC_ground", "FEED", "Dielectric"]
+    components_names = ["PEC_pixels", "FEED"]
     # loop over example:
     for run_id in range(10000):
         if str(run_id) in os.listdir(os.path.join(output_folder,'results')):
