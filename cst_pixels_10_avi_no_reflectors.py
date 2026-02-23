@@ -284,8 +284,8 @@ def run_cst(cst_instance, project, results, run_ID, label=None, OG_model_path=''
     file.close()
 
     print('saved results. ')
-    print(f'\t RUNTIME for #{run_ID:.0f}:\n\t\t ant #{run_ID:.0f} time: {(time.time()-cst_time)/60:.1f} min \n\t\t overall time: {(time.time()-overall_sim_time)/60/60:.2f} hours')
-
+    # print(f'\t RUNTIME for #{run_ID:.0f}:\n\t\t ant #{run_ID:.0f} time: {(time.time()-cst_time)/60:.1f} min \n\t\t overall time: {(time.time()-overall_sim_time)/60/60:.2f} hours')
+    print(f'\t RUNTIME for #{run_ID}:\n\t\t ant #{run_ID} time: {(time.time() - cst_time) / 60:.1f} min \n\t\t overall time: {(time.time() - overall_sim_time) / 60 / 60:.2f} hours')
     return
 
 
@@ -305,12 +305,28 @@ if __name__ == '__main__':
     overall_sim_time = time.time()
     # Path to the directory that contains the folders
     # parent_dir = r'C:\Users\User\Downloads\antenna_FMNIST_Train\antenna_FMNIST_Train'
+    # for fmnist cifar uncomment:
     parent_dir = r'C:\Users\User\Downloads\antenna_FMNIST_reflectors_scale_1_5_dist_3_full_train\antenna_FMNIST_reflectors_scale_1_5_dist_3_full_train'
+    # parent_dir = r'C:\Users\User\Downloads\diffusion_outputs_HDGCNN\diffusion_outputs_HDGCNN'
+    # parent_dir = r'C:\Users\User\Downloads\diffusion_outputs_HGCNN_guidence_1_top_5\diffusion_outputs_HGCNN_guidence_1_top_5'
+
     # List all entries in the directory
     folders = [f for f in os.listdir(parent_dir) if os.path.isdir(os.path.join(parent_dir, f))]
+
+    # for fmnist cifar uncomment:
     output_folder = r'C:\Users\User\Documents\Pixel_model_10_reflectors\output_reflector_MNIST'
+    # output_folder = r'C:\Users\User\Documents\Pixel_model_10_reflectors\CST_output_MNIST_diffusion_HGCNN_guidence_1_top_5'
+
+    # create  output folders
+    os.makedirs(output_folder, exist_ok=True)
+    os.makedirs(output_folder + '\\results', exist_ok=True)
+    os.makedirs(output_folder + '\\models', exist_ok=True)
+    os.makedirs(output_folder + '\\s11_pictures', exist_ok=True)
+    os.makedirs(output_folder + '\\model_pictures', exist_ok=True)
+
+
     # Sort numerically (since folder names are numbers)
-    folders = sorted(folders, key=lambda x: int(x))
+    # folders = sorted(folders, key=lambda x: int(x))
 
     # lets get the examples that ran already based on the result directory"
     # CST_output_dir = r'C:\Users\User\Documents\Pixel_model_10_reflectors\output_avi_no_reflectors'
@@ -319,7 +335,7 @@ if __name__ == '__main__':
     # open the CST program
     cst_instance, project, results = open_cst()
 
-    skip_list = ["3782", "8910"]
+    skip_list = ["7837",'31238', '12224', '31238_top_1', '37721_top_2','43212_top_1', '13067', '14564', '17941']
 
     # loop over example:
     for folder in folders:
@@ -334,9 +350,13 @@ if __name__ == '__main__':
 
         # load label
         ant_prams_path = parent_dir + '\\' + folder +'\\matrix_and_env_dict.pkl'
-        with open(ant_prams_path, 'rb') as f:
-            prams = pickle.load(f)
-        class_label = prams['reflectors_dict']['class_label']
+        if os.path.exists(ant_prams_path):
+            with open(ant_prams_path, 'rb') as f:
+                prams = pickle.load(f)
+            class_label = prams['reflectors_dict']['class_label']
+        else:
+            class_label = 0
+
         # example for usage
         # move your STLs to the folder 'C:\Users\User\Documents\Pixel_model_10_reflectors\STLs'
         # copy the STLS to the target_STL_folder!
@@ -353,7 +373,7 @@ if __name__ == '__main__':
 
 
         # run the simulation and save it in a folder called run_ID
-        run_id = int(folder)
+        run_id = folder
         try:
             run_cst(cst_instance, project, results, run_ID=run_id, label=class_label, OG_model_path=source_STL_folder,
                     output_folder=output_folder)
