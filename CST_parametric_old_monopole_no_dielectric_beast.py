@@ -76,6 +76,7 @@ def save_stl(target_path, components, project):
                                 End With
                             End Sub'''
         project.schematic.execute_vba_code(VBA_code)
+
         VBA_code = ('''sub Main
                 SelectTreeItem("Components")
                         End Sub''')
@@ -100,15 +101,14 @@ def generate_rand_ant(project, run_ID, model_parameters, model_parameters_limits
             project.schematic.execute_vba_code(VBA_code)
     return model_parameters
 
-def run_cst(cst_instance, project, results, run_ID, final_dir, simulation_name, output_folder='',
-            model_parameters={}, model_parameters_limits={},
-            components_names=["PEC_pixels","PEC_ground", "FEED", "Dielectric"]):
+def run_cst(cst_instance, project, results, run_ID, simulation_name, output_folder='',
+            model_parameters={}, model_parameters_limits={}):
 
     """ run the simulations """
 
     # project_name = r'Pixels_CST'
     # local_path = r'G:\Pixels'
-    # final_dir = r'G:\General_models'
+    final_dir = r'G:\General_models'
 
     """ create all tree folder paths """
     # --- from here on I define the paths based on the manually defined project and local path ---
@@ -242,7 +242,7 @@ def run_cst(cst_instance, project, results, run_ID, final_dir, simulation_name, 
     convert_farfield(results_path + '\\' + str(run_ID), pattern_source_path, frequency_list)
 
     # save and copy the STEP model:
-
+    components_names = ["PEC_pixels","PEC_ground", "FEED"]
     # save:
     target_path = os.path.join(models_path, str(run_ID))
     save_stl(target_path=target_path, components=components_names, project=project)
@@ -316,14 +316,10 @@ def clear_folder(folder_path):
 if __name__ == '__main__':
     overall_sim_time = time.time()
     # # Path to the directory that contains the folders
-    # # parent_dir = r'C:\Users\User\Downloads\antenna_FMNIST_Train\antenna_FMNIST_Train'
-    # parent_dir = r'C:\Users\User\Downloads\antenna_FMNIST_reflectors_scale_1_5_dist_10'
-    # # List all entries in the directory
-    # folders = [f for f in os.listdir(parent_dir) if os.path.isdir(os.path.join(parent_dir, f))]
     home_dir = r'C:\Users\User\Documents\Classics'  # The folder containing the output folder and the simulation file
-    simulation_name = 'Yagi_no_dielectric'
+    simulation_name = 'Monopole_no_dielectric'
 
-    output_folder = os.path.join(home_dir, "output_yagi_no_dielectric")
+    output_folder = os.path.join(home_dir, "output_monopole_no_dielectric")
     # # Sort numerically (since folder names are numbers)
     # folders = sorted(folders, key=lambda x: int(x))
 
@@ -336,20 +332,12 @@ if __name__ == '__main__':
 
     model_parameters_limits = {
         'wx': [1,2.5],
-        'l': [15,80],
-        'scale1': [0.8, 1.2],
-        'scale2': [0.8, 1.2],
-        'scale3': [0.8, 1.2],
-        'scaler': [0.8, 1.2],
-        'spacing1': [0.2, 0.5],
-        'spacing2': [0.2, 0.5],
-        'spacing3': [0.2, 0.5],
-        'spacingr': [0.2, 0.5],
+        'l': [2.5,30],
+        'ground_x': [10,200],
+        'ground_y': [10, 200]
     }
     model_parameters = { # the constant ones
     }
-    # components_names = ["PEC_pixels", "PEC_ground", "FEED", "Dielectric"]
-    components_names = ["PEC_pixels", "FEED"]
     # loop over example:
     for run_id in range(10000,10000*2):
         if str(run_id) in os.listdir(os.path.join(output_folder,'results')):
@@ -362,13 +350,11 @@ if __name__ == '__main__':
 
         # run the simulation and save it in a folder called run_ID
         run_cst(cst_instance, project, results,
-                final_dir=home_dir,
                 simulation_name=simulation_name,
                 run_ID=run_id,
                 output_folder=output_folder,
                 model_parameters=model_parameters,
-                model_parameters_limits=model_parameters_limits,
-                components_names=components_names)
+                model_parameters_limits=model_parameters_limits)
 
         # you can actually generate another STL configuration and run it in a loop.
         # it saves all of the results in 'C:\Users\User\Documents\Pixel_model_10_reflectors\output_avi'

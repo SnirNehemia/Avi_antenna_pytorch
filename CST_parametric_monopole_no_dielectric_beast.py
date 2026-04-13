@@ -103,7 +103,8 @@ def generate_rand_ant(project, run_ID, model_parameters, model_parameters_limits
 def run_cst(cst_instance, project, results, run_ID, final_dir, simulation_name, output_folder='',
             model_parameters={}, model_parameters_limits={},
             components_names=["PEC_pixels","PEC_ground", "FEED", "Dielectric"]):
-
+    # delete previous results
+    project.model3d.DeleteResults()
     """ run the simulations """
 
     # project_name = r'Pixels_CST'
@@ -321,45 +322,41 @@ if __name__ == '__main__':
     # # List all entries in the directory
     # folders = [f for f in os.listdir(parent_dir) if os.path.isdir(os.path.join(parent_dir, f))]
     home_dir = r'C:\Users\User\Documents\Classics'  # The folder containing the output folder and the simulation file
-    simulation_name = 'Yagi_no_dielectric'
+    simulation_name = 'Monopole_no_dielectric'
 
-    output_folder = os.path.join(home_dir, "output_yagi_no_dielectric")
+    output_folder = os.path.join(home_dir, "output_monopole_no_dielectric")
     # # Sort numerically (since folder names are numbers)
     # folders = sorted(folders, key=lambda x: int(x))
 
     # # lets get the examples that ran already based on the result directory"
     # # CST_output_dir = r'C:\Users\User\Documents\Pixel_model_10_reflectors\output_avi_no_reflectors'
     # list_of_examples_that_ran_already = os.listdir(output_folder+ '\\results')
-    cst_path = os.path.join(home_dir, simulation_name+'.cst')
+    cst_path = os.path.join(home_dir, simulation_name + '.cst')
     # open the CST program
     cst_instance, project, results = open_cst(cst_path)
 
     model_parameters_limits = {
-        'wx': [1,2.5],
-        'l': [15,80],
-        'scale1': [0.8, 1.2],
-        'scale2': [0.8, 1.2],
-        'scale3': [0.8, 1.2],
-        'scaler': [0.8, 1.2],
-        'spacing1': [0.2, 0.5],
-        'spacing2': [0.2, 0.5],
-        'spacing3': [0.2, 0.5],
-        'spacingr': [0.2, 0.5],
+        'wx': [1, 2.5],
+        'l': [5, 40],
+        'ground_x': [10, 200],
+        'ground_y': [10, 200]
     }
-    model_parameters = { # the constant ones
+    model_parameters = {  # the constant ones
     }
     # components_names = ["PEC_pixels", "PEC_ground", "FEED", "Dielectric"]
-    components_names = ["PEC_pixels", "FEED"]
+    components_names = ["PEC_pixels", "PEC_ground", "FEED"]
     # loop over example:
     for run_id in range(10000,10000*2):
         if str(run_id) in os.listdir(os.path.join(output_folder,'results')):
             print(str(run_id), ' ran already')
             continue
 
+        # project.close()
+        # time.sleep(1)  # Short pause to let processes terminate
         # clear CST cash:
         cache_path = os.path.join(cst_path[:-4],'Result')
         clear_folder(cache_path)
-
+        # cst_instance, project, results = open_cst(cst_path)
         # run the simulation and save it in a folder called run_ID
         run_cst(cst_instance, project, results,
                 final_dir=home_dir,

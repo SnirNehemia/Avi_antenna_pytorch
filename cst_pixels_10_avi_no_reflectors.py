@@ -305,17 +305,24 @@ if __name__ == '__main__':
     overall_sim_time = time.time()
     # Path to the directory that contains the folders
     # parent_dir = r'C:\Users\User\Downloads\antenna_FMNIST_Train\antenna_FMNIST_Train'
-    # for fmnist cifar uncomment:
-    parent_dir = r'C:\Users\User\Downloads\antenna_FMNIST_reflectors_scale_1_5_dist_3_full_train\antenna_FMNIST_reflectors_scale_1_5_dist_3_full_train'
+
+    # for fmnist cifar uncomment: !!!
+    # parent_dir = r'C:\Users\User\Downloads\antenna_FMNIST_reflectors_scale_1_5_dist_3_full_train\antenna_FMNIST_reflectors_scale_1_5_dist_3_full_train'
     # parent_dir = r'C:\Users\User\Downloads\diffusion_outputs_HDGCNN\diffusion_outputs_HDGCNN'
     # parent_dir = r'C:\Users\User\Downloads\diffusion_outputs_HGCNN_guidence_1_top_5\diffusion_outputs_HGCNN_guidence_1_top_5'
+    # parent_dir = r'C:\Users\User\Downloads\diffusion_outputs_gps\diffusion_outputs'
+    parent_dir = r'C:\Users\User\Downloads\diffusion_outputs_gps_34_34_gudince_2\diffusion_outputs_34_34_gudince_2'
+
 
     # List all entries in the directory
     folders = [f for f in os.listdir(parent_dir) if os.path.isdir(os.path.join(parent_dir, f))]
 
-    # for fmnist cifar uncomment:
-    output_folder = r'C:\Users\User\Documents\Pixel_model_10_reflectors\output_reflector_MNIST'
+    # for fmnist cifar uncomment: !!!
+    # output_folder = r'C:\Users\User\Documents\Pixel_model_10_reflectors\output_reflector_MNIST'
     # output_folder = r'C:\Users\User\Documents\Pixel_model_10_reflectors\CST_output_MNIST_diffusion_HGCNN_guidence_1_top_5'
+    output_folder = r'C:\Users\User\Documents\Pixel_model_10_reflectors\CST_output_MNIST_CIFAR_diffusion_gps_outputs_gudince_2_34_34'
+
+
 
     # create  output folders
     os.makedirs(output_folder, exist_ok=True)
@@ -335,7 +342,8 @@ if __name__ == '__main__':
     # open the CST program
     cst_instance, project, results = open_cst()
 
-    skip_list = ["7837",'31238', '12224', '31238_top_1', '37721_top_2','43212_top_1', '13067', '14564', '17941']
+    skip_list = ['9109_top_4',
+                 '5893_top_2', '8132_top_4', '2350_top_5', '2395_top_5', '3795_top_1','5995_top_2', '6384_top_2', '7821_top_4']  #["7837",'31238', '12224', '31238_top_1', '37721_top_2','43212_top_1', '13067', '14564', '17941', '19011', '21224']
 
     # loop over example:
     for folder in folders:

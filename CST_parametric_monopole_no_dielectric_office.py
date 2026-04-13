@@ -76,6 +76,10 @@ def save_stl(target_path, components, project):
                                 End With
                             End Sub'''
         project.schematic.execute_vba_code(VBA_code)
+        VBA_code = ('''sub Main
+                SelectTreeItem("Components")
+                        End Sub''')
+        project.schematic.execute_vba_code(VBA_code)
 
 def generate_rand_ant(project, run_ID, model_parameters, model_parameters_limits):
     np.random.seed(run_ID)

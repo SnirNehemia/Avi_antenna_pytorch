@@ -321,9 +321,9 @@ if __name__ == '__main__':
     # # List all entries in the directory
     # folders = [f for f in os.listdir(parent_dir) if os.path.isdir(os.path.join(parent_dir, f))]
     home_dir = r'C:\Users\User\Documents\Classics'  # The folder containing the output folder and the simulation file
-    simulation_name = 'Yagi_no_dielectric'
+    simulation_name = 'Yagi_1d_y_no_dielectric'
 
-    output_folder = os.path.join(home_dir, "output_yagi_no_dielectric")
+    output_folder = os.path.join(home_dir, "output_yagi_1d_y_dielectric")
     # # Sort numerically (since folder names are numbers)
     # folders = sorted(folders, key=lambda x: int(x))
 
