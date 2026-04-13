@@ -76,9 +76,9 @@ def save_stl(target_path, components, project):
                                 End With
                             End Sub'''
         project.schematic.execute_vba_code(VBA_code)
-    project.schematic.execute_vba_code(''' sub Main
-                                        SelectTreeItem("Components")
-                                       End Sub''')
+        project.schematic.execute_vba_code(''' sub Main
+                                            SelectTreeItem("Components")
+                                           End Sub''')
 
 def generate_rand_ant(project, run_ID, model_parameters, model_parameters_limits):
     np.random.seed(run_ID)
@@ -319,10 +319,16 @@ if __name__ == '__main__':
     # parent_dir = r'C:\Users\User\Downloads\antenna_FMNIST_reflectors_scale_1_5_dist_10'
     # # List all entries in the directory
     # folders = [f for f in os.listdir(parent_dir) if os.path.isdir(os.path.join(parent_dir, f))]
-    home_dir = r'G:\General_models'  # The folder containing the output folder and the simulation file
-    simulation_name = 'Dipole_no_dielectric'
+    import platform
+    if platform.node() == 'shenphys309-003':
+        home_dir = r'G:\General_models'  # The folder containing the output folder and the simulation file
+    elif platform.node() == 'shenkar401-16':
+        home_dir = r'C:\Users\User\Documents\Classics'
+    else:
+        print('ERROR IN COMPUTER NAME!')
+    simulation_name = 'Dipole_reflector_no_dielectric'
 
-    output_folder = os.path.join(home_dir, "output_dipole_no_dielectric")
+    output_folder = os.path.join(home_dir, "output_dipole_reflector_no_dielectric")
     # # Sort numerically (since folder names are numbers)
     # folders = sorted(folders, key=lambda x: int(x))
 
@@ -334,15 +340,18 @@ if __name__ == '__main__':
     cst_instance, project, results = open_cst(cst_path)
 
     model_parameters_limits = {
-        'wx': [1,2.5],
-        'l': [5,100],
+        'wx': [1, 2.5],
+        'l': [5, 50],
+        'reflector_dist': [5, 50],
+        'reflector_l_factor': [0.5,1.5],
+        'reflector_w': [5,100]
     }
     model_parameters = { # the constant ones
     }
     # components_names = ["PEC_pixels", "PEC_ground", "FEED", "Dielectric"]
     components_names = ["PEC_pixels", "FEED"]
     # loop over example:
-    for run_id in range(10000,10000*2):
+    for run_id in range(10000,20000):
         if str(run_id) in os.listdir(os.path.join(output_folder,'results')):
             print(str(run_id), ' ran already')
             continue
